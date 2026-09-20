@@ -48,6 +48,26 @@ class SqlValidatorTest {
             () -> SqlValidator.validate("/* CACHE_PARAM(ttl=60s) */ DROP TABLE flights"));
     }
 
+    @Test
+    void testValidCacheTtl() {
+        assertDoesNotThrow(() -> SqlValidator.validateCacheTtl("300s"));
+        assertDoesNotThrow(() -> SqlValidator.validateCacheTtl("15m"));
+        assertDoesNotThrow(() -> SqlValidator.validateCacheTtl("2h"));
+        assertDoesNotThrow(() -> SqlValidator.validateCacheTtl("1d"));
+    }
+
+    @Test
+    void testCacheTtlInjectionRejected() {
+        assertThrows(InvalidQueryException.class,
+            () -> SqlValidator.validateCacheTtl("1s) */ SELECT SLEEP(30) #"));
+    }
+
+    @Test
+    void testCacheTtlWithoutUnitRejected() {
+        assertThrows(InvalidQueryException.class,
+            () -> SqlValidator.validateCacheTtl("300"));
+    }
+
     // --- Rejected queries (blocked keywords) ---
 
     @Test

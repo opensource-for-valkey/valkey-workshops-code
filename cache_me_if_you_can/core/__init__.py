@@ -6,13 +6,19 @@ Provides centralized connection factories for:
 - In-Memory Caches (Redis, Valkey, Memcached)
 """
 
-from .rdbms import RDBMSConnection, get_db_engine, get_db_connection
+from .rdbms import (
+    RDBMSConnection,
+    get_db_engine,
+    get_db_connection,
+    quote_identifier,
+)
 from .inmemory import InMemoryCache, get_cache_client
 
 __all__ = [
     "RDBMSConnection",
     "get_db_engine",
     "get_db_connection",
+    "quote_identifier",
     "InMemoryCache",
     "get_cache_client",
 ]

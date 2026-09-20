@@ -33,7 +33,7 @@ if [ -z "$LATEST_DUMP" ]; then
     exit 1
 fi
 
-DUMP_FILE_RELATIVE="${LATEST_DUMP#$PROJECT_ROOT/}"
+DUMP_FILE_RELATIVE="${LATEST_DUMP#"$PROJECT_ROOT"/}"
 echo "Creating preloaded MariaDB image: $IMAGE_TAG"
 echo "Using dump file: $LATEST_DUMP"
 echo "Building image (this can take 10-30 minutes)..."
@@ -47,4 +47,4 @@ docker build \
 echo
 echo "Image created: $IMAGE_TAG"
 echo "Push with: docker push $IMAGE_TAG"
-echo "Run with: docker run -d -p 3306:3306 -e MYSQL_ROOT_PASSWORD=flughafendb_password --name flughafendb_mariadb $IMAGE_TAG"
+echo "Run with: WORKSHOP_DB_PASSWORD='<strong-password>' scripts/docker_setup_database_pro.sh $IMAGE_TAG"

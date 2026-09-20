@@ -19,6 +19,9 @@ public class SqlValidator {
     private static final Pattern MULTI_STATEMENT_PATTERN =
         Pattern.compile(";\\s*\\S");
 
+    private static final Pattern CACHE_TTL_PATTERN =
+        Pattern.compile("^[1-9][0-9]*[smhd]$");
+
     private static final Set<String> BLOCKED_KEYWORDS = Set.of(
         "DROP", "DELETE", "TRUNCATE", "ALTER", "INSERT",
         "UPDATE", "CREATE", "GRANT", "REVOKE", "EXEC"
@@ -65,6 +68,20 @@ public class SqlValidator {
         // 7. Redundant safety net: reject if first word matches any blocked keyword
         if (BLOCKED_KEYWORDS.contains(firstWord)) {
             throw new InvalidQueryException("Only SELECT queries are allowed");
+        }
+    }
+
+    /**
+     * Validates a cache TTL before it is embedded in the JDBC cache hint.
+     *
+     * @param ttl duration expressed as a positive integer plus s, m, h, or d
+     * @throws InvalidQueryException if the TTL could alter the SQL comment
+     */
+    public static void validateCacheTtl(String ttl) throws InvalidQueryException {
+        if (ttl == null || !CACHE_TTL_PATTERN.matcher(ttl).matches()) {
+            throw new InvalidQueryException(
+                "Cache TTL must be a positive integer followed by s, m, h, or d"
+            );
         }
     }
 }

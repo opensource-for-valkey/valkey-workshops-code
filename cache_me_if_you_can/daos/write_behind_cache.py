@@ -22,7 +22,7 @@ from sqlalchemy.engine import Engine
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core import get_cache_client, get_db_engine
+from core import get_cache_client, get_db_engine, quote_identifier
 
 
 class WriteBehindCache:
@@ -60,7 +60,7 @@ class WriteBehindCache:
 
     def _quote_identifier(self, identifier: str) -> str:
         """Quote a SQL identifier for the configured database dialect."""
-        return self.db_engine.dialect.identifier_preparer.quote_identifier(identifier)
+        return quote_identifier(self.db_engine, identifier)
 
     def _flight_query(self) -> str:
         """Build the shared flight query with portable reserved identifiers."""
@@ -189,6 +189,14 @@ class WriteBehindCache:
         pipeline = self.cache.client.pipeline(transaction=True)
         pipeline.lrem(self.PROCESSING_KEY, 1, task_json)
         if destination == self.DEAD_LETTER_KEY:
+            flight_id = task.get("flight_id")
+            if flight_id is not None:
+                try:
+                    cache_key = self._generate_cache_key("flight", int(flight_id))
+                except (TypeError, ValueError):
+                    cache_key = None
+                if cache_key:
+                    pipeline.delete(cache_key)
             pipeline.rpush(destination, json.dumps(task))
         else:
             # Retry before newer tasks so updates for one flight cannot reorder.

@@ -1,6 +1,7 @@
 """Weather API cache with TTL support and distributed locking."""
 
 import json
+import secrets
 import sys
 from pathlib import Path
 from typing import Any, Optional
@@ -9,6 +10,14 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core import get_cache_client
+
+
+_RELEASE_LOCK_SCRIPT = """
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+    return redis.call("DEL", KEYS[1])
+end
+return 0
+"""
 
 
 class WeatherAPICache:
@@ -43,14 +52,17 @@ class WeatherAPICache:
         serialized_value = json.dumps(value, default=str)
         return self.cache.set(key, serialized_value, effective_ttl)
 
-    def acquire_lock(self, key: str, timeout: int = 10) -> bool:
-        """Acquire a distributed lock, returning False only for contention."""
+    def acquire_lock(self, key: str, timeout: int = 10) -> Optional[str]:
+        """Acquire a distributed lock and return its unique owner token."""
         lock_key = f"lock:{key}"
-        return bool(self.client.set(lock_key, "1", nx=True, ex=timeout))
+        token = secrets.token_urlsafe(24)
+        return token if self.client.set(lock_key, token, nx=True, ex=timeout) else None
 
-    def release_lock(self, key: str) -> None:
-        """Release a distributed lock."""
-        self.client.delete(f"lock:{key}")
+    def release_lock(self, key: str, token: str) -> bool:
+        """Release the lock only when token still owns it."""
+        return bool(
+            self.client.eval(_RELEASE_LOCK_SCRIPT, 1, f"lock:{key}", token)
+        )
 
     def delete(self, key: str) -> bool:
         """Delete a cache entry."""
@@ -87,11 +99,11 @@ if __name__ == "__main__":
     cache_key = "weather:us:94043"
     cache.set(cache_key, weather_data)
     print(f"Retrieved: {cache.get(cache_key)}")
-    lock_acquired = cache.acquire_lock(cache_key, timeout=5)
-    print(f"Lock acquired: {lock_acquired}")
-    if lock_acquired:
+    lock_token = cache.acquire_lock(cache_key, timeout=5)
+    print(f"Lock acquired: {bool(lock_token)}")
+    if lock_token:
         time.sleep(1)
-        cache.release_lock(cache_key)
+        cache.release_lock(cache_key, lock_token)
     print(f"Weather keys: {cache.keys('weather:*')}")
     print(f"Deleted: {cache.delete(cache_key)}")
     cache.close()

@@ -34,10 +34,13 @@ The stampede prevention demo (`samples/demo_stampede_prevention.py`) demonstrate
 ### 1. Distributed Locking
 
 ```python
-def acquire_lock(self, key: str, timeout: int = 10) -> bool:
-    """Acquire distributed lock using SET NX."""
+def acquire_lock(self, key: str, timeout: int = 10) -> str | None:
+    """Acquire distributed lock and return its owner token."""
     lock_key = f"lock:{key}"
-    return self.client.set(lock_key, "1", nx=True, ex=timeout)
+    token = secrets.token_urlsafe(24)
+    return token if self.client.set(
+        lock_key, token, nx=True, ex=timeout
+    ) else None
 ```
 
 **Benefits:**

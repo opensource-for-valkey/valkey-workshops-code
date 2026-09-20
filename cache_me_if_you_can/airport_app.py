@@ -6,7 +6,7 @@ import plotly.express as px
 import os
 from dotenv import load_dotenv
 from sqlalchemy import text
-from core import get_cache_client, get_db_engine
+from core import get_cache_client, get_db_engine, quote_identifier
 
 # Load environment variables
 load_dotenv()
@@ -27,8 +27,10 @@ def fetch_flight_db(flight_id):
     start = time.time()
     
     engine = get_db_connection()
+    from_column = quote_identifier(engine, "from")
+    to_column = quote_identifier(engine, "to")
     
-    query = text("""
+    query = text(f"""
         SELECT 
             f.flight_id,
             a.airlinename as airline,
@@ -39,8 +41,8 @@ def fetch_flight_db(flight_id):
             'On Time' as status
         FROM flight f
         JOIN airline a ON f.airline_id = a.airline_id
-        JOIN airport af ON f.`from` = af.airport_id
-        JOIN airport at ON f.`to` = at.airport_id
+        JOIN airport af ON f.{from_column} = af.airport_id
+        JOIN airport at ON f.{to_column} = at.airport_id
         WHERE f.flight_id = :flight_id
     """)
     
@@ -92,9 +94,11 @@ def fetch_passenger_flights_db(passport_no):
     start = time.time()
     
     engine = get_db_connection()
+    from_column = quote_identifier(engine, "from")
+    to_column = quote_identifier(engine, "to")
     
     # Complex 8-table JOIN query
-    query = text("""
+    query = text(f"""
         SELECT 
             b.booking_id,
             b.seat,
@@ -115,8 +119,8 @@ def fetch_passenger_flights_db(passport_no):
             p.passportno
         FROM booking b
         JOIN flight f ON b.flight_id = f.flight_id
-        JOIN airport dep_airport ON f.`from` = dep_airport.airport_id
-        JOIN airport arr_airport ON f.`to` = arr_airport.airport_id
+        JOIN airport dep_airport ON f.{from_column} = dep_airport.airport_id
+        JOIN airport arr_airport ON f.{to_column} = arr_airport.airport_id
         JOIN airline al ON f.airline_id = al.airline_id
         JOIN airplane ap ON f.airplane_id = ap.airplane_id
         JOIN airplane_type at ON ap.type_id = at.type_id

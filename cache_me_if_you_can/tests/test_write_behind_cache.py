@@ -80,6 +80,9 @@ class FakeValkey:
         except ValueError:
             return 0
 
+    def delete(self, key):
+        return int(self.values.pop(key, None) is not None)
+
     def close(self):
         return None
 
@@ -249,6 +252,7 @@ def test_database_failures_retry_then_dead_letter_without_task_loss():
     dead_task = json.loads(cache.client.lists[handler.DEAD_LETTER_KEY][0])
     assert dead_task["attempts"] == 2
     assert "database unavailable" in dead_task["last_error"]
+    assert "flight:115" not in cache.client.values
 
 
 def test_abandoned_processing_task_is_recovered():

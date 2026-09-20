@@ -32,6 +32,11 @@ class FakeClient:
     def delete(self, key):
         return int(self.values.pop(key, None) is not None)
 
+    def eval(self, script, numkeys, key, token):
+        if self.values.get(key) != token:
+            return 0
+        return self.delete(key)
+
     def keys(self, pattern):
         return [key for key in self.values if fnmatch.fnmatch(key, pattern)]
 
@@ -73,10 +78,25 @@ def test_lock_acquisition_and_release():
     cache = WeatherAPICache(cache=FakeCache())
     key = "test:lock:key"
 
-    assert cache.acquire_lock(key, timeout=5)
+    token = cache.acquire_lock(key, timeout=5)
+    assert token
     assert not cache.acquire_lock(key, timeout=5)
-    cache.release_lock(key)
+    assert cache.release_lock(key, token)
     assert cache.acquire_lock(key, timeout=5)
+
+
+def test_expired_owner_cannot_release_new_owners_lock():
+    cache = WeatherAPICache(cache=FakeCache())
+    key = "test:lock:ownership"
+    lock_key = f"lock:{key}"
+
+    first_token = cache.acquire_lock(key, timeout=5)
+    cache.client.delete(lock_key)  # Simulate lock expiry.
+    second_token = cache.acquire_lock(key, timeout=5)
+
+    assert first_token != second_token
+    assert not cache.release_lock(key, first_token)
+    assert cache.client.get(lock_key) == second_token
 
 
 def test_cache_operations():
@@ -95,9 +115,10 @@ def test_double_check_pattern():
     key = "test:weather:us:54321"
     data = {"temp": 68.0, "condition": "cloudy"}
 
-    assert cache.acquire_lock(key, timeout=5)
+    token = cache.acquire_lock(key, timeout=5)
+    assert token
     cache.set(key, data, ttl=60)
-    cache.release_lock(key)
+    assert cache.release_lock(key, token)
     assert cache.get(key) == data
 
 

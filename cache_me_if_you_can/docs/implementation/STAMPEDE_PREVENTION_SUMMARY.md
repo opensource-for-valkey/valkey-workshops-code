@@ -38,8 +38,8 @@ Created a comprehensive demonstration of cache stampede prevention using distrib
 **File:** `daos/weather_api_cache.py` (already existed, confirmed it has locking)
 
 **Key Methods:**
-- `acquire_lock(key, timeout)`: Distributed lock acquisition using SET NX
-- `release_lock(key)`: Lock release
+- `acquire_lock(key, timeout)`: SET NX acquisition returning a unique owner token
+- `release_lock(key, token)`: Atomic compare-and-delete release
 - `get(key)`: Cache retrieval
 - `set(key, value, ttl)`: Cache storage with TTL
 
@@ -337,9 +337,12 @@ success = (api_calls == 1) and (total_requests > 1)
 
 ### Distributed Lock (Redis SET NX)
 ```python
-def acquire_lock(self, key: str, timeout: int = 10) -> bool:
+def acquire_lock(self, key: str, timeout: int = 10) -> str | None:
     lock_key = f"lock:{key}"
-    return self.client.set(lock_key, "1", nx=True, ex=timeout)
+    token = secrets.token_urlsafe(24)
+    return token if self.client.set(
+        lock_key, token, nx=True, ex=timeout
+    ) else None
 ```
 
 ### Exponential Backoff

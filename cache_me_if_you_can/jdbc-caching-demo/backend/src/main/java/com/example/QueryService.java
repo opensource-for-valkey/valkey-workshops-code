@@ -1,6 +1,7 @@
 package com.example;
 
 import com.example.model.QueryResult;
+import com.example.validation.SqlValidator;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -99,6 +100,7 @@ public class QueryService {
 
         String baseSql = (customSql != null && !customSql.isBlank()) ? customSql : PRODUCT_CATALOG_QUERY;
         String effectiveTtl = (ttl != null && !ttl.isBlank()) ? ttl : "300s";
+        SqlValidator.validateCacheTtl(effectiveTtl);
         String hint = "/* CACHE_PARAM(ttl=" + effectiveTtl + ") */";
         String sql = useCache ? hint + " " + baseSql : baseSql;
 

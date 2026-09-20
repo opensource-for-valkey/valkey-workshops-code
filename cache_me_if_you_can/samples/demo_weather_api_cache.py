@@ -10,6 +10,7 @@ import time
 import random
 import json
 import os
+import secrets
 from pathlib import Path
 from typing import Any, Optional
 from dotenv import load_dotenv
@@ -37,6 +38,13 @@ console = Console()
 
 # Global verbose flag
 VERBOSE = False
+
+_RELEASE_LOCK_SCRIPT = """
+if redis.call("GET", KEYS[1]) == ARGV[1] then
+    return redis.call("DEL", KEYS[1])
+end
+return 0
+"""
 
 
 def print_section(title: str):
@@ -100,7 +108,7 @@ class SimpleCache:
         except Exception as e:
             print(f"Cache SET error for key '{key}': {e}")
     
-    def acquire_lock(self, key: str, timeout: int = 10) -> bool:
+    def acquire_lock(self, key: str, timeout: int = 10) -> Optional[str]:
         """
         Acquire a distributed lock for a key to prevent cache stampede.
         
@@ -109,17 +117,20 @@ class SimpleCache:
             timeout: Lock timeout in seconds (default: 10)
         
         Returns:
-            True if lock was acquired, False otherwise
+            Unique owner token if acquired, otherwise None
         """
         lock_key = f"lock:{key}"
         try:
             # SET NX (set if not exists) with expiration
-            return self.client.set(lock_key, "1", nx=True, ex=timeout)
+            token = secrets.token_urlsafe(24)
+            return token if self.client.set(
+                lock_key, token, nx=True, ex=timeout
+            ) else None
         except Exception as e:
             print(f"Lock ACQUIRE error for key '{key}': {e}")
-            return False
+            return None
     
-    def release_lock(self, key: str) -> None:
+    def release_lock(self, key: str, token: str) -> bool:
         """
         Release a distributed lock for a key.
         
@@ -128,9 +139,12 @@ class SimpleCache:
         """
         lock_key = f"lock:{key}"
         try:
-            self.client.delete(lock_key)
+            return bool(
+                self.client.eval(_RELEASE_LOCK_SCRIPT, 1, lock_key, token)
+            )
         except Exception as e:
             print(f"Lock RELEASE error for key '{key}': {e}")
+            return False
     
     def clear(self) -> None:
         """Clear all cache entries (use with caution in production!)."""
@@ -344,9 +358,9 @@ def fetch_weather_with_cache(cities: list, cache: SimpleCache, run_number: int =
             status_icon = "✓"
         else:
             # Cache miss - try to acquire lock to prevent stampede
-            lock_acquired = cache.acquire_lock(cache_key, timeout=10)
+            lock_token = cache.acquire_lock(cache_key, timeout=10)
             
-            if lock_acquired:
+            if lock_token:
                 try:
                     # Double-check cache after acquiring lock (another thread might have populated it)
                     cached_data = cache.get(cache_key)
@@ -366,7 +380,7 @@ def fetch_weather_with_cache(cities: list, cache: SimpleCache, run_number: int =
                         status_icon = "⚡"
                 finally:
                     # Always release the lock
-                    cache.release_lock(cache_key)
+                    cache.release_lock(cache_key, lock_token)
             else:
                 # Could not acquire lock, wait and retry getting from cache
                 lock_waits += 1

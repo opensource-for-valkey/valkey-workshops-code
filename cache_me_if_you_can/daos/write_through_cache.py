@@ -20,11 +20,11 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict
 from sqlalchemy import text
 
-from core import get_db_engine, get_cache_client
+from core import get_db_engine, get_cache_client, quote_identifier
 
 
 class WriteThroughCache:
@@ -35,10 +35,33 @@ class WriteThroughCache:
         self.db_engine = get_db_engine()
         self.cache = get_cache_client()
         self.default_ttl = int(os.getenv("CACHE_TTL", "3600"))
+        self._cache_sync_required: set[str] = set()
     
     def _generate_cache_key(self, entity_type: str, entity_id: int) -> str:
         """Generate cache key for entity."""
         return f"{entity_type}:{entity_id}"
+
+    def _flight_query(self) -> str:
+        """Build the shared flight query with portable reserved identifiers."""
+        from_column = quote_identifier(self.db_engine, "from")
+        to_column = quote_identifier(self.db_engine, "to")
+        return f"""
+            SELECT
+                f.flight_id,
+                f.flightno,
+                f.departure,
+                f.arrival,
+                f.airline_id,
+                f.airplane_id,
+                dep.iata as from_airport,
+                arr.iata as to_airport,
+                al.airlinename
+            FROM flight f
+            JOIN airport dep ON f.{from_column} = dep.airport_id
+            JOIN airport arr ON f.{to_column} = arr.airport_id
+            JOIN airline al ON f.airline_id = al.airline_id
+            WHERE f.flight_id = :flight_id
+        """
     
     def get_flight(self, flight_id: int) -> tuple[Optional[Dict], str, float, str, str]:
         """
@@ -59,39 +82,27 @@ class WriteThroughCache:
         
         cache_key = self._generate_cache_key("flight", flight_id)
         
-        # Try cache first
+        # Bypass a potentially stale value while a prior write is reconciling.
         start_time = time.perf_counter()
-        cached_data = self.cache.get(cache_key)
+        cached_data = (
+            None
+            if cache_key in self._cache_sync_required
+            else self.cache.get(cache_key)
+        )
         
         if cached_data:
             latency_ms = (time.perf_counter() - start_time) * 1000
             return json.loads(cached_data), "CACHE_HIT", latency_ms, cache_key, ""
         
         # Cache miss - query database
-        query_str = """
-            SELECT 
-                f.flight_id,
-                f.flightno,
-                f.departure,
-                f.arrival,
-                f.airline_id,
-                f.airplane_id,
-                dep.iata as from_airport,
-                arr.iata as to_airport,
-                al.airlinename
-            FROM flight f
-            JOIN airport dep ON f.from = dep.airport_id
-            JOIN airport arr ON f.to = arr.airport_id
-            JOIN airline al ON f.airline_id = al.airline_id
-            WHERE f.flight_id = :flight_id
-        """
+        query_str = self._flight_query()
         
         query = text(query_str)
         
         with self.db_engine.connect() as conn:
             result = conn.execute(query, {"flight_id": flight_id})
             row = result.fetchone()
-            
+
             if not row:
                 latency_ms = (time.perf_counter() - start_time) * 1000
                 return None, "CACHE_MISS", latency_ms, cache_key, query_str.strip()
@@ -105,6 +116,7 @@ class WriteThroughCache:
             
             # Store in cache
             self.cache.set(cache_key, json.dumps(flight_data), self.default_ttl)
+            self._cache_sync_required.discard(cache_key)
             
             latency_ms = (time.perf_counter() - start_time) * 1000
             return flight_data, "CACHE_MISS", latency_ms, cache_key, query_str.strip()
@@ -138,12 +150,20 @@ class WriteThroughCache:
             - queries_executed: List of SQL queries executed
         """
         queries_executed = []
+        cache_key = self._generate_cache_key("flight", flight_id)
+        if not hasattr(self, "_cache_sync_required"):
+            self._cache_sync_required = set()
+        self._cache_sync_required.add(cache_key)
         
         try:
             with self.db_engine.begin() as conn:
                 # Get current flight data for logging
-                select_query_str = """
-                    SELECT flight_id, flightno, `from`, `to`, 
+                from_column = quote_identifier(self.db_engine, "from")
+                to_column = quote_identifier(self.db_engine, "to")
+                user_column = quote_identifier(self.db_engine, "user")
+                select_query_str = f"""
+                    SELECT flight_id, flightno,
+                           {from_column} AS from_id, {to_column} AS to_id,
                            departure, arrival, airline_id, airplane_id
                     FROM flight
                     WHERE flight_id = :flight_id
@@ -176,9 +196,9 @@ class WriteThroughCache:
                 })
                 
                 # Log the change
-                log_query_str = """
+                log_query_str = f"""
                     INSERT INTO flight_log (
-                        log_date, user, flight_id,
+                        log_date, {user_column}, flight_id,
                         flightno_old, flightno_new,
                         from_old, from_new,
                         to_old, to_new,
@@ -188,7 +208,7 @@ class WriteThroughCache:
                         airline_id_old, airline_id_new,
                         comment
                     ) VALUES (
-                        NOW(), :user, :flight_id,
+                        :log_date, :user, :flight_id,
                         :flightno, :flightno,
                         :from_id, :from_id,
                         :to_id, :to_id,
@@ -203,11 +223,12 @@ class WriteThroughCache:
                 
                 log_query = text(log_query_str)
                 conn.execute(log_query, {
+                    "log_date": datetime.now(timezone.utc),
                     "user": user,
                     "flight_id": flight_id,
                     "flightno": old_dict["flightno"],
-                    "from_id": old_dict["from"],
-                    "to_id": old_dict["to"],
+                    "from_id": old_dict["from_id"],
+                    "to_id": old_dict["to_id"],
                     "departure_old": old_dict["departure"],
                     "departure_new": new_departure,
                     "arrival_old": old_dict["arrival"],
@@ -216,20 +237,26 @@ class WriteThroughCache:
                     "airline_id": old_dict["airline_id"],
                     "comment": comment or "Flight time updated"
                 })
-            
-            # Write-through: Update cache immediately after database
-            cache_key = self._generate_cache_key("flight", flight_id)
-            
-            # Delete old cache entry first to ensure fresh data
-            self.cache.delete(cache_key)
-            
-            # Get fresh data from database to update cache (will be cache miss)
-            self.get_flight(flight_id)
-            
-            return True, queries_executed
-            
+
+                # Invalidate stale data before commit. If invalidation fails,
+                # the exception rolls the database transaction back.
+                self.cache.delete(cache_key)
+
         except Exception as e:
+            self._cache_sync_required.discard(cache_key)
             return False, queries_executed
+
+        # Delete again after commit in case a concurrent reader repopulated the
+        # old value between the first invalidation and the database commit.
+        try:
+            self.cache.delete(cache_key)
+            self.get_flight(flight_id)
+        except Exception:
+            # Keep the bypass marker. A later read will ignore any stale value,
+            # reload from the database, and clear the marker after cache set.
+            return True, queries_executed
+
+        return True, queries_executed
     
     def verify_consistency(self, flight_id: int) -> Dict:
         """
@@ -248,23 +275,7 @@ class WriteThroughCache:
         cache_flight = json.loads(cached_data) if cached_data else None
         
         # Get from database
-        query_str = """
-            SELECT 
-                f.flight_id,
-                f.flightno,
-                f.departure,
-                f.arrival,
-                f.airline_id,
-                f.airplane_id,
-                dep.iata as from_airport,
-                arr.iata as to_airport,
-                al.airlinename
-            FROM flight f
-            JOIN airport dep ON f.from = dep.airport_id
-            JOIN airport arr ON f.to = arr.airport_id
-            JOIN airline al ON f.airline_id = al.airline_id
-            WHERE f.flight_id = :flight_id
-        """
+        query_str = self._flight_query()
         
         query = text(query_str)
         

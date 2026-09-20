@@ -9,10 +9,15 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, URL
 
 # Load environment variables
 load_dotenv()
+
+
+def quote_identifier(engine: Engine, identifier: str) -> str:
+    """Quote a SQL identifier using the configured database dialect."""
+    return engine.dialect.identifier_preparer.quote_identifier(identifier)
 
 
 class RDBMSConnection:
@@ -55,20 +60,23 @@ class RDBMSConnection:
         connection_string = self._build_connection_string()
         return create_engine(connection_string, **engine_kwargs)
     
-    def _build_connection_string(self) -> str:
-        """Build connection string based on database type."""
+    def _build_connection_string(self) -> URL:
+        """Build a URL without interpolating or misparsing credentials."""
         if self.db_type in ["mysql", "mariadb"]:
-            return (
-                f"mysql+pymysql://{self.user}:{self.password}"
-                f"@{self.host}:{self.port}/{self.database}"
-            )
+            drivername = "mysql+pymysql"
         elif self.db_type == "postgresql":
-            return (
-                f"postgresql+psycopg2://{self.user}:{self.password}"
-                f"@{self.host}:{self.port}/{self.database}"
-            )
+            drivername = "postgresql+psycopg2"
         else:
             raise ValueError(f"Unsupported DB_ENGINE: {self.db_type}")
+
+        return URL.create(
+            drivername=drivername,
+            username=self.user,
+            password=self.password,
+            host=self.host,
+            port=int(self.port),
+            database=self.database,
+        )
     
     def get_engine(self) -> Engine:
         """

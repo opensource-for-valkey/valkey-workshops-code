@@ -56,12 +56,12 @@ uv run samples/demo_stampede_prevention.py -i -v
 
 ### 1. Acquire Lock
 ```python
-lock_acquired = cache.acquire_lock(cache_key, timeout=10)
+lock_token = cache.acquire_lock(cache_key, timeout=10)
 ```
 
 ### 2. Double-Check Cache
 ```python
-if lock_acquired:
+if lock_token:
     cached_data = cache.get(cache_key)
     if cached_data:
         return cached_data  # Another thread populated it
@@ -77,7 +77,7 @@ if lock_acquired:
 ### 4. Release Lock
 ```python
 finally:
-    cache.release_lock(cache_key)
+    cache.release_lock(cache_key, lock_token)
 ```
 
 ### 5. Wait with Backoff
@@ -157,7 +157,8 @@ def get_weather(city):
         return data
     
     # Acquire lock
-    if cache.acquire_lock(cache_key):
+    lock_token = cache.acquire_lock(cache_key)
+    if lock_token:
         try:
             # Double-check
             data = cache.get(cache_key)
@@ -169,7 +170,7 @@ def get_weather(city):
             cache.set(cache_key, data)
             return data
         finally:
-            cache.release_lock(cache_key)
+            cache.release_lock(cache_key, lock_token)
     else:
         # Wait for cache
         return wait_for_cache(cache_key)
@@ -184,7 +185,8 @@ def get_expensive_report(params):
     if data:
         return data
     
-    if cache.acquire_lock(cache_key):
+    lock_token = cache.acquire_lock(cache_key)
+    if lock_token:
         try:
             data = cache.get(cache_key)
             if data:
@@ -194,7 +196,7 @@ def get_expensive_report(params):
             cache.set(cache_key, data, ttl=3600)
             return data
         finally:
-            cache.release_lock(cache_key)
+            cache.release_lock(cache_key, lock_token)
     else:
         return wait_for_cache(cache_key)
 ```

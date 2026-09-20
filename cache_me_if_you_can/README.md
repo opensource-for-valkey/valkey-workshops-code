@@ -67,8 +67,9 @@ The resulting image is tagged `<registry-user>/flughafendb_mariadb:latest`.
 
 ```bash
 docker run -d \
-  -p 3306:3306 \
-  -e MYSQL_ROOT_PASSWORD=flughafendb_password \
+  -p 127.0.0.1:3306:3306 \
+  -e WORKSHOP_DB_USER=flughafen_user \
+  -e WORKSHOP_DB_PASSWORD='<strong-password>' \
   --name flughafendb_mariadb \
   <registry-user>/flughafendb_mariadb:latest
 ```

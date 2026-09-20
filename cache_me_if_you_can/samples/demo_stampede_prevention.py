@@ -295,9 +295,9 @@ def fetch_weather_with_stampede_protection(
             return cached_data
         
         # Cache miss - try to acquire lock with configurable TTL
-        lock_acquired = cache.acquire_lock(cache_key, timeout=int(lock_ttl_seconds))
+        lock_token = cache.acquire_lock(cache_key, timeout=int(lock_ttl_seconds))
         
-        if lock_acquired:
+        if lock_token:
             # We got the lock - we're responsible for fetching
             request_metric.lock_acquired = True
             metrics.lock_acquisitions += 1
@@ -344,7 +344,7 @@ def fetch_weather_with_stampede_protection(
                 
             finally:
                 # Always release the lock
-                cache.release_lock(cache_key)
+                cache.release_lock(cache_key, lock_token)
         
         else:
             # Could not acquire lock - another thread is fetching

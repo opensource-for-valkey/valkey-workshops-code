@@ -60,7 +60,7 @@ Time: T0
 ### 1. Distributed Lock with Redis/Valkey
 
 ```python
-def acquire_lock(self, key: str, timeout: int = 10) -> bool:
+def acquire_lock(self, key: str, timeout: int = 10) -> str | None:
     """
     Acquire a distributed lock using SET NX (set if not exists).
     
@@ -69,15 +69,28 @@ def acquire_lock(self, key: str, timeout: int = 10) -> bool:
         timeout: Lock timeout in seconds
     
     Returns:
-        True if lock was acquired, False otherwise
+        Unique owner token if acquired, otherwise None
     """
     lock_key = f"lock:{key}"
-    return self.client.set(lock_key, "1", nx=True, ex=timeout)
+    token = secrets.token_urlsafe(24)
+    return token if self.client.set(
+        lock_key, token, nx=True, ex=timeout
+    ) else None
 
-def release_lock(self, key: str) -> None:
-    """Release the distributed lock."""
+def release_lock(self, key: str, token: str) -> bool:
+    """Release the distributed lock only if token still owns it."""
     lock_key = f"lock:{key}"
-    self.client.delete(lock_key)
+    return bool(self.client.eval(
+        """
+        if redis.call('GET', KEYS[1]) == ARGV[1] then
+            return redis.call('DEL', KEYS[1])
+        end
+        return 0
+        """,
+        1,
+        lock_key,
+        token,
+    ))
 ```
 
 ### 2. Fetch with Stampede Protection
@@ -90,7 +103,8 @@ def fetch_with_protection(cache_key: str):
         return cached_data  # Cache hit
     
     # Cache miss - try to acquire lock
-    if cache.acquire_lock(cache_key, timeout=10):
+    lock_token = cache.acquire_lock(cache_key, timeout=10)
+    if lock_token:
         try:
             # Double-check cache after acquiring lock
             cached_data = cache.get(cache_key)
@@ -102,7 +116,7 @@ def fetch_with_protection(cache_key: str):
             cache.set(cache_key, data)
             return data
         finally:
-            cache.release_lock(cache_key)
+            cache.release_lock(cache_key, lock_token)
     else:
         # Could not acquire lock - wait and retry
         return wait_for_cache_with_backoff(cache_key)

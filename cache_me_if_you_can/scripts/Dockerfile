@@ -3,11 +3,11 @@ FROM mariadb:10.11
 # Required SQL dump path, relative to the build context.
 ARG DUMP_FILE
 
-ENV MYSQL_ROOT_PASSWORD=flughafendb_password
 ENV MYSQL_DATABASE=flughafendb_large
 ENV BAKED_DATADIR=/var/lib/mysql_baked
 
 COPY ${DUMP_FILE} /tmp/flughafendb_dump.sql.gz
+COPY scripts/docker-entrypoint-workshop.sh /usr/local/bin/docker-entrypoint-workshop.sh
 
 # Initialize and populate a custom data directory so the resulting image is
 # ready to serve the workshop data immediately after container startup.
@@ -36,7 +36,9 @@ RUN set -eux; \
     gunzip -c /tmp/flughafendb_dump.sql.gz | \
         mysql -u root --socket=/run/mysqld/mysqld.sock flughafendb_large; \
     mysql -u root --socket=/run/mysqld/mysqld.sock \
-        -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'flughafendb_password' WITH GRANT OPTION;"; \
+        -e "CREATE USER IF NOT EXISTS 'flughafen_user'@'%' IDENTIFIED BY 'disabled-during-build' ACCOUNT LOCK; \
+            GRANT ALL PRIVILEGES ON flughafendb_large.* TO 'flughafen_user'@'%'; \
+            GRANT PROCESS ON *.* TO 'flughafen_user'@'%';"; \
     mysql -u root --socket=/run/mysqld/mysqld.sock -e "FLUSH PRIVILEGES;"; \
     mysqladmin -u root --socket=/run/mysqld/mysqld.sock shutdown; \
     wait "$server_pid"; \
@@ -55,4 +57,7 @@ RUN printf '%s\n' \
     'query_cache_type=0' \
     > /etc/mysql/conf.d/baked_data.cnf
 
+RUN chmod 0755 /usr/local/bin/docker-entrypoint-workshop.sh
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint-workshop.sh"]
 CMD ["mysqld"]

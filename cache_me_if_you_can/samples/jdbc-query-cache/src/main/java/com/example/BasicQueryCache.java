@@ -34,14 +34,22 @@ public class BasicQueryCache {
         // The "jdbc:aws-wrapper:mysql://" prefix tells the AWS Advanced JDBC Wrapper
         // to intercept all JDBC calls and apply configured plugins (like the Remote
         // Query Cache Plugin). The underlying connection goes to MariaDB on port 3306.
-        String url = "jdbc:aws-wrapper:mysql://localhost:3306/flughafendb_large";
+        String dbHost = System.getenv().getOrDefault("DB_HOST", "localhost");
+        String dbPort = System.getenv().getOrDefault("DB_PORT", "3306");
+        String dbName = System.getenv().getOrDefault("DB_NAME", "flughafendb_large");
+        String dbUser = System.getenv().getOrDefault("DB_USER", "flughafen_user");
+        String dbPassword = System.getenv("DB_PASSWORD");
+        if (dbPassword == null || dbPassword.isBlank()) {
+            throw new IllegalStateException("Set DB_PASSWORD before running the sample");
+        }
+        String url = "jdbc:aws-wrapper:mysql://" + dbHost + ":" + dbPort + "/" + dbName;
 
         // ─── Connection Properties ─────────────────────────────────────────────────
         Properties props = new Properties();
 
         // Database credentials for the local MariaDB instance
-        props.setProperty("user", "root");
-        props.setProperty("password", "flughafendb_password");
+        props.setProperty("user", dbUser);
+        props.setProperty("password", dbPassword);
 
         // wrapperPlugins: Comma-separated list of JDBC Wrapper plugins to activate.
         // "remoteQueryCache" enables the Remote Query Cache Plugin, which automatically

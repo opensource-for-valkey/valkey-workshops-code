@@ -148,20 +148,28 @@ def acquire_lock(cache_key, timeout_seconds=10):
         timeout_seconds: Lock timeout (prevents deadlocks)
     
     Returns:
-        True if lock acquired, False otherwise
+        Unique owner token if acquired, otherwise None
     """
     lock_key = f"lock:{cache_key}"
-    
-    # SET NX: Set if Not eXists
-    # EX: Set expiration time
-    success = valkey.set(lock_key, "1", nx=True, ex=timeout_seconds)
-    
-    return success  # True if lock acquired, False if already locked
+    token = secrets.token_urlsafe(24)
+    return token if valkey.set(
+        lock_key, token, nx=True, ex=timeout_seconds
+    ) else None
 
-def release_lock(cache_key):
-    """Release the distributed lock"""
+def release_lock(cache_key, token):
+    """Release only the lock still owned by this token."""
     lock_key = f"lock:{cache_key}"
-    valkey.delete(lock_key)
+    return bool(valkey.eval(
+        """
+        if redis.call('GET', KEYS[1]) == ARGV[1] then
+            return redis.call('DEL', KEYS[1])
+        end
+        return 0
+        """,
+        1,
+        lock_key,
+        token,
+    ))
 ```
 
 **Pseudocode for Stampede-Protected Fetch:**
@@ -184,7 +192,8 @@ def fetch_with_stampede_protection(cache_key):
         return cached_data  # Cache hit - fast path
     
     # Step 2: Cache miss - try to acquire lock
-    if acquire_lock(cache_key, timeout=10):
+    lock_token = acquire_lock(cache_key, timeout_seconds=10)
+    if lock_token:
         try:
             # Double-check cache after acquiring lock
             # Another thread might have populated it
@@ -202,7 +211,7 @@ def fetch_with_stampede_protection(cache_key):
             
         finally:
             # Always release lock
-            release_lock(cache_key)
+            release_lock(cache_key, lock_token)
     
     else:
         # Could not acquire lock - another thread is fetching
@@ -510,7 +519,8 @@ Result: 3 second delay (acceptable)
 Always check cache after acquiring lock:
 
 ```python
-if acquire_lock(cache_key):
+lock_token = acquire_lock(cache_key)
+if lock_token:
     try:
         # Double-check cache
         cached_data = cache.get(cache_key)
@@ -522,7 +532,7 @@ if acquire_lock(cache_key):
         cache.set(cache_key, data)
         return data
     finally:
-        release_lock(cache_key)
+        release_lock(cache_key, lock_token)
 ```
 
 **Why?** Another thread might have populated the cache while we were waiting to acquire the lock.
