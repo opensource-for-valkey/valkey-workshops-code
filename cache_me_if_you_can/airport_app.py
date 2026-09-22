@@ -21,17 +21,15 @@ def get_cache_connection():
     """Get Valkey/Redis cache connection"""
     return get_cache_client()
 
-# --- DATA LOGIC: FLIGHT DETAILS ---
-def fetch_flight_db(flight_id):
-    """Fetch flight details from database"""
-    start = time.time()
-    
+
+def get_flight_sql_query():
+    """Build the portable flight-details SQL shown and executed by the app."""
     engine = get_db_connection()
     from_column = quote_identifier(engine, "from")
     to_column = quote_identifier(engine, "to")
-    
-    query = text(f"""
-        SELECT 
+
+    return f"""
+        SELECT
             f.flight_id,
             a.airlinename as airline,
             af.iata as from_airport,
@@ -44,31 +42,13 @@ def fetch_flight_db(flight_id):
         JOIN airport af ON f.{from_column} = af.airport_id
         JOIN airport at ON f.{to_column} = at.airport_id
         WHERE f.flight_id = :flight_id
-    """)
-    
-    with engine.connect() as conn:
-        result = conn.execute(query, {"flight_id": flight_id})
-        row = result.fetchone()
-        if row:
-            data = dict(row._mapping)
-            # Rename for backward compatibility
-            data['from'] = data.pop('from_airport')
-            data['to'] = data.pop('to_airport')
-        else:
-            data = None
-    
-    return data, (time.time() - start) * 1000
+    """.strip()
 
-# --- DATA LOGIC: MANIFEST (HEAVY QUERY) ---
-def fetch_manifest_db(flight_id):
-    """Fetch flight manifest with passenger details (heavy JOIN operation)"""
-    start = time.time()
-    
-    engine = get_db_connection()
-    
-    # Heavy 3-table JOIN: Booking -> Passenger -> PassengerDetails
-    query = text("""
-        SELECT 
+
+def get_manifest_sql_query():
+    """Build the manifest SQL shown and executed by the app."""
+    return """
+        SELECT
             b.seat,
             p.firstname,
             p.lastname,
@@ -80,26 +60,17 @@ def fetch_manifest_db(flight_id):
         LEFT JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id
         WHERE b.flight_id = :flight_id
         ORDER BY b.seat ASC
-    """)
-    
-    with engine.connect() as conn:
-        result = conn.execute(query, {"flight_id": flight_id})
-        data = [dict(row._mapping) for row in result]
-    
-    return data, (time.time() - start) * 1000
+    """.strip()
 
-# --- DATA LOGIC: PASSENGER FLIGHTS (COMPLEX QUERY) ---
-def fetch_passenger_flights_db(passport_no):
-    """Fetch all flights for a passenger (complex multi-table JOIN)"""
-    start = time.time()
-    
+
+def get_passenger_flights_sql_query():
+    """Build the portable passenger-flight SQL shown and executed by the app."""
     engine = get_db_connection()
     from_column = quote_identifier(engine, "from")
     to_column = quote_identifier(engine, "to")
-    
-    # Complex 8-table JOIN query
-    query = text(f"""
-        SELECT 
+
+    return f"""
+        SELECT
             b.booking_id,
             b.seat,
             b.price,
@@ -128,8 +99,52 @@ def fetch_passenger_flights_db(passport_no):
         WHERE p.passportno = :passport_no
         ORDER BY f.departure DESC
         LIMIT 10
-    """)
+    """.strip()
+
+
+# --- DATA LOGIC: FLIGHT DETAILS ---
+def fetch_flight_db(flight_id, sql_query=None):
+    """Fetch flight details from database"""
+    start = time.time()
+
+    engine = get_db_connection()
+    query = text(sql_query or get_flight_sql_query())
+
+    with engine.connect() as conn:
+        result = conn.execute(query, {"flight_id": flight_id})
+        row = result.fetchone()
+        if row:
+            data = dict(row._mapping)
+            # Rename for backward compatibility
+            data['from'] = data.pop('from_airport')
+            data['to'] = data.pop('to_airport')
+        else:
+            data = None
     
+    return data, (time.time() - start) * 1000
+
+# --- DATA LOGIC: MANIFEST (HEAVY QUERY) ---
+def fetch_manifest_db(flight_id, sql_query=None):
+    """Fetch flight manifest with passenger details (heavy JOIN operation)"""
+    start = time.time()
+
+    engine = get_db_connection()
+    query = text(sql_query or get_manifest_sql_query())
+
+    with engine.connect() as conn:
+        result = conn.execute(query, {"flight_id": flight_id})
+        data = [dict(row._mapping) for row in result]
+
+    return data, (time.time() - start) * 1000
+
+# --- DATA LOGIC: PASSENGER FLIGHTS (COMPLEX QUERY) ---
+def fetch_passenger_flights_db(passport_no, sql_query=None):
+    """Fetch all flights for a passenger (complex multi-table JOIN)"""
+    start = time.time()
+
+    engine = get_db_connection()
+    query = text(sql_query or get_passenger_flights_sql_query())
+
     with engine.connect() as conn:
         result = conn.execute(query, {"passport_no": passport_no})
         data = [dict(row._mapping) for row in result]
@@ -178,23 +193,49 @@ def get_random_passengers():
     return data
 
 # --- CACHE ASIDE WRAPPERS ---
-def get_data_cache_aside(key_prefix, id, fetch_func, cache):
-    key = f"{key_prefix}:{id}"
-    
+def get_data_cache_aside(
+    key_prefix,
+    identifier,
+    fetch_func,
+    cache,
+    sql_query,
+    query_parameters,
+):
+    key = f"{key_prefix}:{identifier}"
+
     # 1. Try Cache
     start = time.time()
     cached = cache.get(key)
     if cached:
-        return json.loads(cached), (time.time() - start) * 1000, "HIT"
-    
+        request_details = {
+            "cache_key": key,
+            "cache_operation": "GET hit",
+            "sql_query": sql_query,
+            "query_parameters": query_parameters,
+            "sql_executed": False,
+        }
+        return (
+            json.loads(cached),
+            (time.time() - start) * 1000,
+            "HIT",
+            request_details,
+        )
+
     # 2. DB Fallback
-    data, db_time = fetch_func(id)
-    
+    data, db_time = fetch_func(identifier, sql_query)
+
     # 3. Populate Cache (if data exists)
     if data:
         cache.set(key, json.dumps(data, default=str), ttl=3600)
-        
-    return data, db_time, "MISS"
+
+    request_details = {
+        "cache_key": key,
+        "cache_operation": "GET miss → SET" if data else "GET miss",
+        "sql_query": sql_query,
+        "query_parameters": query_parameters,
+        "sql_executed": True,
+    }
+    return data, db_time, "MISS", request_details
 
 # --- STREAMLIT UI ---
 st.set_page_config(
@@ -257,20 +298,29 @@ with col_input:
     # ACTION BUTTONS
     if st.button("🔍 Get Flight Details (Simple Query)", width='stretch'):
         try:
-            res, lat, stat = get_data_cache_aside(
-                "flight", 
-                flight_id, 
-                fetch_flight_db, 
-                st.session_state.cache
+            sql_query = get_flight_sql_query()
+            res, lat, stat, request_details = get_data_cache_aside(
+                "flight",
+                flight_id,
+                fetch_flight_db,
+                st.session_state.cache,
+                sql_query,
+                {"flight_id": flight_id},
             )
-            
+
             source = "Valkey Cache" if stat == "HIT" else "Database"
             st.session_state.history.append({
                 "Type": "Flight Details",
                 "Latency": lat,
-                "Source": source
+                "Source": source,
+                "Cache Status": stat,
+                "Cache Key": request_details["cache_key"],
+                "Cache Operation": request_details["cache_operation"],
+                "SQL Query": request_details["sql_query"],
+                "Query Parameters": request_details["query_parameters"],
+                "SQL Executed": request_details["sql_executed"],
             })
-            
+
             if res:
                 st.success(f"✅ Flight {res['from']} → {res['to']}")
                 st.json({
@@ -288,20 +338,29 @@ with col_input:
 
     if st.button("📋 Get Manifest (3-Table JOIN)", width='stretch'):
         try:
-            res, lat, stat = get_data_cache_aside(
-                "manifest", 
-                flight_id, 
-                fetch_manifest_db, 
-                st.session_state.cache
+            sql_query = get_manifest_sql_query()
+            res, lat, stat, request_details = get_data_cache_aside(
+                "manifest",
+                flight_id,
+                fetch_manifest_db,
+                st.session_state.cache,
+                sql_query,
+                {"flight_id": flight_id},
             )
-            
+
             source = "Valkey Cache" if stat == "HIT" else "Database (3 JOINs)"
             st.session_state.history.append({
                 "Type": "Flight Manifest",
                 "Latency": lat,
-                "Source": source
+                "Source": source,
+                "Cache Status": stat,
+                "Cache Key": request_details["cache_key"],
+                "Cache Operation": request_details["cache_operation"],
+                "SQL Query": request_details["sql_query"],
+                "Query Parameters": request_details["query_parameters"],
+                "SQL Executed": request_details["sql_executed"],
             })
-            
+
             if res:
                 st.success(f"✅ Manifest loaded: {len(res)} passengers")
                 
@@ -322,20 +381,29 @@ with col_input:
             st.error("❌ No passenger selected")
         else:
             try:
-                res, lat, stat = get_data_cache_aside(
+                sql_query = get_passenger_flights_sql_query()
+                res, lat, stat, request_details = get_data_cache_aside(
                     "passenger_flights",
                     selected_passport,
                     fetch_passenger_flights_db,
-                    st.session_state.cache
+                    st.session_state.cache,
+                    sql_query,
+                    {"passport_no": selected_passport},
                 )
-                
+
                 source = "Valkey Cache" if stat == "HIT" else "Database (8 JOINs)"
                 st.session_state.history.append({
                     "Type": "Passenger Flights",
                     "Latency": lat,
-                    "Source": source
+                    "Source": source,
+                    "Cache Status": stat,
+                    "Cache Key": request_details["cache_key"],
+                    "Cache Operation": request_details["cache_operation"],
+                    "SQL Query": request_details["sql_query"],
+                    "Query Parameters": request_details["query_parameters"],
+                    "SQL Executed": request_details["sql_executed"],
                 })
-                
+
                 if res:
                     passenger_name = f"{res[0]['firstname']} {res[0]['lastname']}"
                     st.success(f"✅ Found {len(res)} flights for {passenger_name}")
@@ -410,7 +478,53 @@ with col_stats:
         c1.metric("Last Query", last['Type'])
         c2.metric("Latency", f"{last['Latency']:.3f} ms")
         c3.metric("Source", last['Source'])
-        
+
+        st.markdown("### Request Details")
+        request_indexes = [
+            index
+            for index in range(len(st.session_state.history) - 1, -1, -1)
+            if "Cache Key" in st.session_state.history[index]
+        ]
+        if request_indexes:
+            selected_request_index = st.selectbox(
+                "Inspect request",
+                options=request_indexes,
+                format_func=lambda index: (
+                    f"#{index + 1} · "
+                    f"{st.session_state.history[index]['Type']} · "
+                    f"{st.session_state.history[index]['Cache Status']}"
+                ),
+                key="request_details_index",
+            )
+            selected_request = st.session_state.history[selected_request_index]
+
+            detail_col, execution_col = st.columns([3, 1])
+            with detail_col:
+                st.markdown("**Valkey cache key**")
+                st.code(selected_request["Cache Key"], language="text")
+            with execution_col:
+                st.metric("Cache operation", selected_request["Cache Operation"])
+                st.metric(
+                    "SQL execution",
+                    "Executed" if selected_request["SQL Executed"] else "Skipped",
+                )
+
+            st.markdown("**SQL query**")
+            st.code(selected_request["SQL Query"], language="sql")
+            st.markdown("**Bound parameters**")
+            st.json(selected_request["Query Parameters"])
+
+            if not selected_request["SQL Executed"]:
+                st.info(
+                    "Valkey returned a cache hit, so this SQL query was not sent "
+                    "to the database."
+                )
+        else:
+            st.info(
+                "Run a query to capture its SQL text, bound parameters, and "
+                "Valkey cache key."
+            )
+
         st.markdown("---")
         
         # Latency comparison chart
