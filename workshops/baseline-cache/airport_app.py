@@ -348,7 +348,7 @@ with col_input:
                 {"flight_id": flight_id},
             )
 
-            source = "Valkey Cache" if stat == "HIT" else "Database (3 JOINs)"
+            source = "Valkey Cache" if stat == "HIT" else "Database (2 JOINs, 3 table references)"
             st.session_state.history.append({
                 "Type": "Flight Manifest",
                 "Latency": lat,
@@ -391,7 +391,7 @@ with col_input:
                     {"passport_no": selected_passport},
                 )
 
-                source = "Valkey Cache" if stat == "HIT" else "Database (8 JOINs)"
+                source = "Valkey Cache" if stat == "HIT" else "Database (7 JOINs, 8 table references)"
                 st.session_state.history.append({
                     "Type": "Passenger Flights",
                     "Latency": lat,
@@ -537,8 +537,8 @@ with col_stats:
             labels={"index": "Query Number", "Latency": "Latency (ms)"},
             color_discrete_map={
                 "Database": "#FF4B4B",
-                "Database (3 JOINs)": "#CC3333",
-                "Database (8 JOINs)": "#8B0000",
+                "Database (2 JOINs, 3 table references)": "#CC3333",
+                "Database (7 JOINs, 8 table references)": "#8B0000",
                 "Valkey Cache": "#00C805"
             },
             text_auto='.0f'
@@ -607,9 +607,9 @@ with col_stats:
         4. **Subsequent Queries** - Data served from cache (faster)
         
         ### Query Complexity:
-        - **Flight Details**: 3 JOINs (simple)
-        - **Flight Manifest**: 3 JOINs (medium)
-        - **Passenger Flights**: 8 JOINs (complex)
+        - **Flight Details**: 3 JOINs, 4 table references; returns one row
+        - **Flight Manifest**: 2 JOINs, 3 table references; returns many passengers
+        - **Passenger Flights**: 7 JOINs, 8 table references; returns up to 10 rows
         
         ### Try it:
         - Click "Get Flight Details" twice to see cache speedup
