@@ -94,7 +94,7 @@ def demonstrate(client):
     ordered, elapsed_ms = timed(client.zrange, ties, RangeByIndex(0, -1), reverse=True)
     assert ordered == [b"bob", b"alice", b"carol"]
     console.print(
-        "Equal scores, reverse lexicographical order: bob, alice, carol; "
+        "Tied at 100 (bob before alice in REV), then carol at 90: bob, alice, carol; "
         f"Valkey ZRANGE latency={elapsed_ms:.3f} ms"
     )
 
