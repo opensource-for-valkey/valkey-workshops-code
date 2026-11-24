@@ -1,0 +1,25 @@
+{
+  "category": "complex_queries",
+  "description": "Advanced queries with multiple joins, aggregations, and complex filtering",
+  "examples": [
+    {
+      "prompt": "Get complete booking details with passenger, flight, and airport information",
+      "sql": "SELECT b.booking_id, b.seat, b.price, p.firstname, p.lastname, p.passportno, f.flightno, f.departure, f.arrival, a_from.name as departure_airport, a_from.iata as departure_iata, a_to.name as arrival_airport, a_to.iata as arrival_iata, al.airlinename, al.iata as airline_code FROM booking b INNER JOIN passenger p ON b.passenger_id = p.passenger_id INNER JOIN flight f ON b.flight_id = f.flight_id INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id INNER JOIN airline al ON f.airline_id = al.airline_id ORDER BY b.booking_id DESC LIMIT 10",
+      "tables_used": ["booking", "passenger", "flight", "airport", "airline"],
+      "joins": [
+        {"type": "INNER JOIN", "from": "booking", "to": "passenger"},
+        {"type": "INNER JOIN", "from": "booking", "to": "flight"},
+        {"type": "INNER JOIN", "from": "flight", "to": "airport (from)"},
+        {"type": "INNER JOIN", "from": "flight", "to": "airport (to)"},
+        {"type": "INNER JOIN", "from": "flight", "to": "airline"}
+      ],
+      "key_concepts": ["multiple joins", "self-referencing table", "descriptive aliases", "ORDER BY", "LIMIT"]
+    },
+    {
+      "prompt": "Show passenger booking history with full flight details for passenger 1000",
+      "sql": "SELECT p.passenger_id, p.firstname, p.lastname, b.booking_id, b.seat, b.price, f.flightno, f.departure, f.arrival, a_from.name as departure_airport, a_from.iata as departure_iata, a_to.name as arrival_airport, a_to.iata as arrival_iata, al.airlinename FROM passenger p INNER JOIN booking b ON p.passenger_id = b.passenger_id INNER JOIN flight f ON b.flight_id = f.flight_id INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id INNER JOIN airline al ON f.airline_id = al.airline_id WHERE p.passenger_id = 1000 ORDER BY f.departure DESC",
+      "tables_used": ["passenger", "booking", "flight", "airport", "airline"],
+      "key_concepts": ["booking history", "multiple joins", "chronological ordering"]
+    }
+  ]
+}

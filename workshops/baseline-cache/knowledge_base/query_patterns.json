@@ -1,0 +1,48 @@
+{
+  "description": "Common SQL query patterns for natural language to SQL conversion",
+  "patterns": [
+    {
+      "pattern_name": "single_table_lookup",
+      "description": "Retrieve records from a single table by ID or unique field",
+      "natural_language_examples": [
+        "Get airport by IATA code JFK",
+        "Find airline with ID 5",
+        "Show passenger with passport P103014",
+        "Get employee with username admin"
+      ],
+      "sql_template": "SELECT {columns} FROM {table} WHERE {field} = {value}",
+      "example": {
+        "prompt": "Get airport with geographic details by IATA code JFK",
+        "sql": "SELECT a.airport_id, a.iata, a.icao, a.name, ag.city, ag.country, ag.latitude, ag.longitude FROM airport a LEFT JOIN airport_geo ag ON a.airport_id = ag.airport_id WHERE a.iata = 'JFK'"
+      }
+    },
+    {
+      "pattern_name": "pattern_search",
+      "description": "Search records using LIKE operator for partial matches",
+      "natural_language_examples": [
+        "Find airports with 'International' in the name",
+        "Search passengers whose last name starts with 'Smith'",
+        "Get flights with flight number starting with 'AA'"
+      ],
+      "sql_template": "SELECT {columns} FROM {table} WHERE {field} LIKE '{pattern}%' LIMIT {limit}",
+      "example": {
+        "prompt": "Find airports with 'International' in the name",
+        "sql": "SELECT airport_id, iata, icao, name FROM airport WHERE name LIKE '%International%' LIMIT 10"
+      }
+    },
+    {
+      "pattern_name": "simple_join",
+      "description": "Join two related tables to get combined information",
+      "natural_language_examples": [
+        "Get passenger with their contact details",
+        "Show flight with airline information",
+        "Get airline with base airport details"
+      ],
+      "sql_template": "SELECT {columns} FROM {table1} {join_type} JOIN {table2} ON {join_condition} WHERE {condition}",
+      "example": {
+        "prompt": "Get passenger with their details by passenger ID 1000",
+        "sql": "SELECT p.passenger_id, p.passportno, p.firstname, p.lastname, pd.birthdate, pd.sex, pd.city, pd.country, pd.emailaddress FROM passenger p LEFT JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id WHERE p.passenger_id = 1000"
+      }
+    }
+  ]
+}

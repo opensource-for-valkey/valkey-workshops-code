@@ -1,0 +1,133 @@
+{
+  "table_name": "flightschedule",
+  "description": "Stores recurring flight schedules with days of week and standard departure/arrival times",
+  "primary_key": "flightno",
+  "columns": [
+    {
+      "name": "flightno",
+      "type": "char(8)",
+      "nullable": false,
+      "description": "Flight number identifier"
+    },
+    {
+      "name": "from",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Departure airport ID"
+    },
+    {
+      "name": "to",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Arrival airport ID"
+    },
+    {
+      "name": "departure",
+      "type": "time",
+      "nullable": false,
+      "description": "Standard departure time (time only, no date)"
+    },
+    {
+      "name": "arrival",
+      "type": "time",
+      "nullable": false,
+      "description": "Standard arrival time (time only, no date)"
+    },
+    {
+      "name": "airline_id",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "ID of the airline operating this scheduled flight"
+    },
+    {
+      "name": "monday",
+      "type": "tinyint(1)",
+      "nullable": true,
+      "default": "0",
+      "description": "Whether the flight operates on Mondays (0=no, 1=yes)"
+    },
+    {
+      "name": "tuesday",
+      "type": "tinyint(1)",
+      "nullable": true,
+      "default": "0",
+      "description": "Whether the flight operates on Tuesdays (0=no, 1=yes)"
+    },
+    {
+      "name": "wednesday",
+      "type": "tinyint(1)",
+      "nullable": true,
+      "default": "0",
+      "description": "Whether the flight operates on Wednesdays (0=no, 1=yes)"
+    },
+    {
+      "name": "thursday",
+      "type": "tinyint(1)",
+      "nullable": true,
+      "default": "0",
+      "description": "Whether the flight operates on Thursdays (0=no, 1=yes)"
+    },
+    {
+      "name": "friday",
+      "type": "tinyint(1)",
+      "nullable": true,
+      "default": "0",
+      "description": "Whether the flight operates on Fridays (0=no, 1=yes)"
+    },
+    {
+      "name": "saturday",
+      "type": "tinyint(1)",
+      "nullable": true,
+      "default": "0",
+      "description": "Whether the flight operates on Saturdays (0=no, 1=yes)"
+    },
+    {
+      "name": "sunday",
+      "type": "tinyint(1)",
+      "nullable": true,
+      "default": "0",
+      "description": "Whether the flight operates on Sundays (0=no, 1=yes)"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "from",
+      "references_table": "airport",
+      "references_column": "airport_id",
+      "description": "Links to airport table for departure airport"
+    },
+    {
+      "column": "to",
+      "references_table": "airport",
+      "references_column": "airport_id",
+      "description": "Links to airport table for arrival airport"
+    },
+    {
+      "column": "airline_id",
+      "references_table": "airline",
+      "references_column": "airline_id",
+      "description": "Links to airline table to identify the operating airline"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "von_idx",
+      "type": "INDEX",
+      "columns": ["from"]
+    },
+    {
+      "name": "nach_idx",
+      "type": "INDEX",
+      "columns": ["to"]
+    },
+    {
+      "name": "fluglinie_idx",
+      "type": "INDEX",
+      "columns": ["airline_id"]
+    }
+  ],
+  "referenced_by": [],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

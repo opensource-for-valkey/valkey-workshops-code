@@ -1,0 +1,55 @@
+{
+  "table_name": "airplane",
+  "description": "Stores information about individual airplanes in the fleet",
+  "primary_key": "airplane_id",
+  "columns": [
+    {
+      "name": "airplane_id",
+      "type": "int(11)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each airplane"
+    },
+    {
+      "name": "capacity",
+      "type": "mediumint(8) unsigned",
+      "nullable": false,
+      "description": "Passenger capacity of the airplane"
+    },
+    {
+      "name": "type_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID referencing the airplane type/model"
+    },
+    {
+      "name": "airline_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID of the airline that owns this airplane"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "type_id",
+      "references_table": "airplane_type",
+      "references_column": "type_id",
+      "description": "Links to airplane_type table for model specifications"
+    },
+    {
+      "column": "airline_id",
+      "references_table": "airline",
+      "references_column": "airline_id",
+      "description": "Links to airline table to identify the owner"
+    }
+  ],
+  "referenced_by": [
+    {
+      "table": "flight",
+      "column": "airplane_id"
+    }
+  ],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

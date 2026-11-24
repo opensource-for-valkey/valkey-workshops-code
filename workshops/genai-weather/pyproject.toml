@@ -1,0 +1,23 @@
+[project]
+name = "valkey-genai-weather-workshop"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "flask>=3.1",
+    "numpy>=2.2.5",
+    "pycountry>=24.6",
+    "python-dotenv==1.2.4",
+    "requests>=2.32",
+    "rich==15.0.0",
+    "sentence-transformers>=5.1.2",
+    "timezonefinder>=6.5",
+    "valkey-glide-sync==2.6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<10",
+]
+
+[tool.uv]
+package = false

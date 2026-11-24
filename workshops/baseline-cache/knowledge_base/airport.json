@@ -1,0 +1,80 @@
+{
+  "table_name": "airport",
+  "description": "Master table of airports with their identification codes",
+  "primary_key": "airport_id",
+  "columns": [
+    {
+      "name": "airport_id",
+      "type": "smallint(6)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each airport"
+    },
+    {
+      "name": "iata",
+      "type": "char(3)",
+      "nullable": true,
+      "description": "IATA code for the airport (3-letter code, e.g., JFK, LAX)"
+    },
+    {
+      "name": "icao",
+      "type": "char(4)",
+      "nullable": false,
+      "unique": true,
+      "description": "ICAO code for the airport (4-letter code, e.g., KJFK)"
+    },
+    {
+      "name": "name",
+      "type": "varchar(50)",
+      "nullable": false,
+      "description": "Full name of the airport"
+    }
+  ],
+  "foreign_keys": [],
+  "indexes": [
+    {
+      "name": "icao_unq",
+      "type": "UNIQUE",
+      "columns": ["icao"]
+    },
+    {
+      "name": "name_idx",
+      "type": "INDEX",
+      "columns": ["name"]
+    },
+    {
+      "name": "iata_idx",
+      "type": "INDEX",
+      "columns": ["iata"]
+    }
+  ],
+  "referenced_by": [
+    {
+      "table": "airline",
+      "column": "base_airport"
+    },
+    {
+      "table": "flight",
+      "column": "from"
+    },
+    {
+      "table": "flight",
+      "column": "to"
+    },
+    {
+      "table": "flightschedule",
+      "column": "from"
+    },
+    {
+      "table": "flightschedule",
+      "column": "to"
+    },
+    {
+      "table": "airport_geo",
+      "column": "airport_id"
+    }
+  ],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

@@ -1,0 +1,60 @@
+{
+  "category": "simple_queries",
+  "description": "Single table operations and basic lookups",
+  "examples": [
+    {
+      "prompt": "Get airport by IATA code JFK",
+      "sql": "SELECT airport_id, iata, icao, name FROM airport WHERE iata = 'JFK'",
+      "tables_used": ["airport"],
+      "key_concepts": ["single table", "exact match", "WHERE clause"]
+    },
+    {
+      "prompt": "Get airport by ICAO code KJFK",
+      "sql": "SELECT airport_id, iata, icao, name FROM airport WHERE icao = 'KJFK'",
+      "tables_used": ["airport"],
+      "key_concepts": ["single table", "exact match", "unique field"]
+    },
+    {
+      "prompt": "Find airline by IATA code LH",
+      "sql": "SELECT airline_id, iata, airlinename, base_airport FROM airline WHERE iata = 'LH'",
+      "tables_used": ["airline"],
+      "key_concepts": ["single table", "exact match"]
+    },
+    {
+      "prompt": "Get flight by ID 115",
+      "sql": "SELECT flight_id, flightno, `from`, `to`, departure, arrival, airline_id FROM flight WHERE flight_id = 115",
+      "tables_used": ["flight"],
+      "key_concepts": ["single table", "primary key lookup", "reserved keywords as backticks"]
+    },
+    {
+      "prompt": "Count total passengers",
+      "sql": "SELECT COUNT(*) as total_passengers FROM passenger",
+      "tables_used": ["passenger"],
+      "key_concepts": ["aggregation", "COUNT function", "alias"]
+    },
+    {
+      "prompt": "Count total bookings",
+      "sql": "SELECT COUNT(*) as total_bookings FROM booking",
+      "tables_used": ["booking"],
+      "key_concepts": ["aggregation", "COUNT function"]
+    },
+    {
+      "prompt": "Find airports with International in the name",
+      "sql": "SELECT airport_id, iata, icao, name FROM airport WHERE name LIKE '%International%' LIMIT 10",
+      "tables_used": ["airport"],
+      "key_concepts": ["pattern matching", "LIKE operator", "wildcards", "LIMIT"]
+    },
+    {
+      "prompt": "Get employee by username admin",
+      "sql": "SELECT employee_id, firstname, lastname, department, emailaddress FROM employee WHERE username = 'admin'",
+      "tables_used": ["employee"],
+      "key_concepts": ["single table", "unique field lookup"]
+    },
+    {
+      "prompt": "List first 10 airlines",
+      "sql": "SELECT airline_id, iata, airlinename, base_airport FROM airline LIMIT 10",
+      "tables_used": ["airline"],
+      "key_concepts": ["pagination", "LIMIT clause"]
+    }
+  ]
+}

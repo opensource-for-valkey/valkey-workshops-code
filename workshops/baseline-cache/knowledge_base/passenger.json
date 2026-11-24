@@ -1,0 +1,54 @@
+{
+  "table_name": "passenger",
+  "description": "Stores basic passenger information for flight bookings",
+  "primary_key": "passenger_id",
+  "columns": [
+    {
+      "name": "passenger_id",
+      "type": "int(11)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each passenger"
+    },
+    {
+      "name": "passportno",
+      "type": "char(9)",
+      "nullable": false,
+      "unique": true,
+      "description": "Passenger's passport number"
+    },
+    {
+      "name": "firstname",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Passenger's first name"
+    },
+    {
+      "name": "lastname",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Passenger's last name"
+    }
+  ],
+  "foreign_keys": [],
+  "indexes": [
+    {
+      "name": "pass_unq",
+      "type": "UNIQUE",
+      "columns": ["passportno"]
+    }
+  ],
+  "referenced_by": [
+    {
+      "table": "booking",
+      "column": "passenger_id"
+    },
+    {
+      "table": "passengerdetails",
+      "column": "passenger_id"
+    }
+  ],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

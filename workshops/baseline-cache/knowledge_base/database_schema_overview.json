@@ -1,0 +1,117 @@
+{
+  "database_name": "flughafendb_large",
+  "description": "Airport management database (Flughafen DB) containing information about airports, airlines, flights, bookings, passengers, employees, and weather data",
+  "license": "CC BY 4.0 by Stefan Pröll, Eva Zangerle, Wolfgang Gassler",
+  "version": "Updated with bug fixes and date adjustments (flights moved forward 10 years + 4 months)",
+  "tables": [
+    {
+      "name": "airport",
+      "description": "Master table of airports with IATA/ICAO codes",
+      "row_count_estimate": "~13,598",
+      "key_relationships": "Referenced by airline, flight, flightschedule, airport_geo"
+    },
+    {
+      "name": "airport_geo",
+      "description": "Geographic coordinates and location data for airports",
+      "row_count_estimate": "~13,598",
+      "key_relationships": "Links to airport table"
+    },
+    {
+      "name": "airport_reachable",
+      "description": "Temporary in-memory table for airport connectivity calculations",
+      "row_count_estimate": "Variable",
+      "key_relationships": "None (temporary table)"
+    },
+    {
+      "name": "airline",
+      "description": "Airlines with their base airports",
+      "row_count_estimate": "~114",
+      "key_relationships": "References airport; referenced by flight, flightschedule, airplane"
+    },
+    {
+      "name": "airplane_type",
+      "description": "Catalog of airplane models and specifications",
+      "row_count_estimate": "~343",
+      "key_relationships": "Referenced by airplane"
+    },
+    {
+      "name": "airplane",
+      "description": "Individual airplanes with capacity and ownership",
+      "row_count_estimate": "~5,584",
+      "key_relationships": "References airplane_type and airline; referenced by flight"
+    },
+    {
+      "name": "flight",
+      "description": "Individual flight instances with schedules",
+      "row_count_estimate": "~758,658",
+      "key_relationships": "References airport (from/to), airline, airplane; referenced by booking, flight_log"
+    },
+    {
+      "name": "flightschedule",
+      "description": "Recurring flight schedules with days of operation",
+      "row_count_estimate": "Variable",
+      "key_relationships": "References airport (from/to) and airline"
+    },
+    {
+      "name": "flight_log",
+      "description": "Audit log of flight modifications",
+      "row_count_estimate": "Variable",
+      "key_relationships": "References flight"
+    },
+    {
+      "name": "passenger",
+      "description": "Basic passenger information with passport numbers",
+      "row_count_estimate": "~36,100",
+      "key_relationships": "Referenced by booking and passengerdetails"
+    },
+    {
+      "name": "passengerdetails",
+      "description": "Extended passenger contact and demographic information",
+      "row_count_estimate": "~36,100",
+      "key_relationships": "References passenger (CASCADE delete)"
+    },
+    {
+      "name": "booking",
+      "description": "Flight bookings with seat assignments and pricing",
+      "row_count_estimate": "~55,099,799",
+      "key_relationships": "References flight and passenger"
+    },
+    {
+      "name": "employee",
+      "description": "Airport employee records with authentication",
+      "row_count_estimate": "~1,001",
+      "key_relationships": "None (standalone table)"
+    },
+    {
+      "name": "weatherdata",
+      "description": "Historical weather observations at airport stations",
+      "row_count_estimate": "Variable",
+      "key_relationships": "None (standalone table)"
+    }
+  ],
+  "core_relationships": [
+    {
+      "relationship": "Airport Network",
+      "description": "airport <- airline.base_airport, flight.from/to, flightschedule.from/to"
+    },
+    {
+      "relationship": "Flight Operations",
+      "description": "flight <- booking.flight_id, references airline, airplane, airport"
+    },
+    {
+      "relationship": "Aircraft Fleet",
+      "description": "airplane <- flight.airplane_id, references airplane_type, airline"
+    },
+    {
+      "relationship": "Passenger Bookings",
+      "description": "passenger <- booking.passenger_id, passengerdetails.passenger_id"
+    }
+  ],
+  "data_quality_notes": [
+    "Gender values standardized to 'm' and 'f' (was 'w' for female in German)",
+    "Weather conditions translated to English",
+    "Employee departments translated to English",
+    "Flight dates updated to be current (10 years + 4 months forward)",
+    "Base airport fixes applied for some airlines"
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "table_name": "employee",
+  "description": "Stores information about airport employees including personal details, contact info, and employment data",
+  "primary_key": "employee_id",
+  "columns": [
+    {
+      "name": "employee_id",
+      "type": "int(11)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each employee"
+    },
+    {
+      "name": "firstname",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Employee's first name"
+    },
+    {
+      "name": "lastname",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Employee's last name"
+    },
+    {
+      "name": "birthdate",
+      "type": "date",
+      "nullable": false,
+      "description": "Employee's date of birth"
+    },
+    {
+      "name": "sex",
+      "type": "char(1)",
+      "nullable": true,
+      "description": "Employee's gender (m for male, f for female)",
+      "valid_values": ["m", "f"]
+    },
+    {
+      "name": "street",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Street address"
+    },
+    {
+      "name": "city",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "City of residence"
+    },
+    {
+      "name": "zip",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Postal/ZIP code"
+    },
+    {
+      "name": "country",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Country of residence"
+    },
+    {
+      "name": "emailaddress",
+      "type": "varchar(120)",
+      "nullable": true,
+      "description": "Employee's email address"
+    },
+    {
+      "name": "telephoneno",
+      "type": "varchar(30)",
+      "nullable": true,
+      "description": "Employee's telephone number"
+    },
+    {
+      "name": "salary",
+      "type": "decimal(8,2)",
+      "nullable": true,
+      "description": "Employee's salary"
+    },
+    {
+      "name": "department",
+      "type": "enum",
+      "nullable": true,
+      "description": "Department where the employee works",
+      "valid_values": ["marketing", "accounting", "management", "logistics", "airfield"]
+    },
+    {
+      "name": "username",
+      "type": "varchar(20)",
+      "nullable": true,
+      "unique": true,
+      "description": "Login username for the employee"
+    },
+    {
+      "name": "password",
+      "type": "char(32)",
+      "nullable": true,
+      "description": "Hashed password for authentication"
+    }
+  ],
+  "foreign_keys": [],
+  "indexes": [
+    {
+      "name": "benutzer_unq",
+      "type": "UNIQUE",
+      "columns": ["username"]
+    }
+  ],
+  "referenced_by": [],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

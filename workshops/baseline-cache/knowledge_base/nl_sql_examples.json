@@ -1,0 +1,149 @@
+{
+  "title": "Natural Language to SQL Examples",
+  "description": "Comprehensive examples mapping natural language queries to SQL",
+  "examples": [
+    {
+      "id": 1,
+      "prompt": "Get airport with geographic details by IATA code JFK",
+      "sql": "SELECT a.airport_id, a.iata, a.icao, a.name, ag.city, ag.country, ag.latitude, ag.longitude FROM airport a LEFT JOIN airport_geo ag ON a.airport_id = ag.airport_id WHERE a.iata = 'JFK'",
+      "explanation": "Joins airport with airport_geo to get location details, filters by IATA code",
+      "complexity": "simple_join"
+    },
+    {
+      "id": 2,
+      "prompt": "Find all airports in Germany",
+      "sql": "SELECT a.airport_id, a.iata, a.icao, a.name, ag.city FROM airport a INNER JOIN airport_geo ag ON a.airport_id = ag.airport_id WHERE ag.country = 'Germany' LIMIT 50",
+      "explanation": "Joins with airport_geo to filter by country",
+      "complexity": "simple_join"
+    },
+    {
+      "id": 3,
+      "prompt": "Show me the passenger details for passenger ID 1000",
+      "sql": "SELECT p.passenger_id, p.passportno, p.firstname, p.lastname, pd.birthdate, pd.sex, pd.city, pd.country, pd.emailaddress, pd.telephoneno FROM passenger p LEFT JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id WHERE p.passenger_id = 1000",
+      "explanation": "Left join to include passenger even if details are missing",
+      "complexity": "simple_join"
+    },
+    {
+      "id": 4,
+      "prompt": "Get all flights from JFK to LAX",
+      "sql": "SELECT f.flight_id, f.flightno, f.departure, f.arrival, a_from.name as departure_airport, a_to.name as arrival_airport FROM flight f INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id WHERE a_from.iata = 'JFK' AND a_to.iata = 'LAX' LIMIT 20",
+      "explanation": "Joins flight with airport twice (for departure and arrival), filters by both IATA codes",
+      "complexity": "multiple_joins"
+    },
+    {
+      "id": 5,
+      "prompt": "How many bookings does passenger 1000 have?",
+      "sql": "SELECT COUNT(b.booking_id) as total_bookings FROM booking b WHERE b.passenger_id = 1000",
+      "explanation": "Simple count aggregation with filter",
+      "complexity": "aggregation"
+    },
+    {
+      "id": 6,
+      "prompt": "Show the top 10 passengers by number of flights",
+      "sql": "SELECT p.passenger_id, p.firstname, p.lastname, COUNT(b.booking_id) as total_flights FROM passenger p INNER JOIN booking b ON p.passenger_id = b.passenger_id GROUP BY p.passenger_id, p.firstname, p.lastname ORDER BY total_flights DESC LIMIT 10",
+      "explanation": "Groups by passenger, counts bookings, orders by count descending",
+      "complexity": "aggregation_with_grouping"
+    },
+    {
+      "id": 7,
+      "prompt": "What are the most profitable routes?",
+      "sql": "SELECT a_from.name as departure_airport, a_from.iata as from_iata, a_to.name as arrival_airport, a_to.iata as to_iata, COUNT(DISTINCT f.flight_id) as total_flights, SUM(b.price) as total_revenue FROM flight f INNER JOIN booking b ON f.flight_id = b.flight_id INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id GROUP BY a_from.airport_id, a_from.name, a_from.iata, a_to.airport_id, a_to.name, a_to.iata ORDER BY total_revenue DESC LIMIT 10",
+      "explanation": "Complex query with multiple joins, grouping by route, summing revenue",
+      "complexity": "complex_aggregation"
+    },
+    {
+      "id": 8,
+      "prompt": "Show upcoming flights for passenger 1000",
+      "sql": "SELECT p.firstname, p.lastname, b.seat, f.flightno, f.departure, f.arrival, a_from.name as departure_airport, a_to.name as arrival_airport, al.airlinename FROM passenger p INNER JOIN booking b ON p.passenger_id = b.passenger_id INNER JOIN flight f ON b.flight_id = f.flight_id INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id INNER JOIN airline al ON f.airline_id = al.airline_id WHERE p.passenger_id = 1000 AND f.departure > NOW() ORDER BY f.departure ASC",
+      "explanation": "Multiple joins with date filtering for future flights",
+      "complexity": "complex_join"
+    },
+    {
+      "id": 9,
+      "prompt": "Find passengers from United States",
+      "sql": "SELECT p.passenger_id, p.firstname, p.lastname, pd.city, pd.country FROM passenger p INNER JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id WHERE pd.country = 'United States' LIMIT 20",
+      "explanation": "Join with passengerdetails to filter by country",
+      "complexity": "simple_join"
+    },
+    {
+      "id": 10,
+      "prompt": "Get airline information with base airport details",
+      "sql": "SELECT al.airline_id, al.iata, al.airlinename, ap.name as base_airport_name, ap.iata as base_airport_code FROM airline al INNER JOIN airport ap ON al.base_airport = ap.airport_id WHERE al.airline_id = 1",
+      "explanation": "Joins airline with airport to get base airport information",
+      "complexity": "simple_join"
+    }
+  ]
+}
+  ,
+    {
+      "id": 11,
+      "prompt": "List all destinations from JFK airport",
+      "sql": "SELECT DISTINCT a_to.airport_id, a_to.iata, a_to.name as destination_airport, ag_to.city, ag_to.country, COUNT(f.flight_id) as number_of_flights FROM flight f INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id LEFT JOIN airport_geo ag_to ON a_to.airport_id = ag_to.airport_id WHERE a_from.iata = 'JFK' GROUP BY a_to.airport_id, a_to.iata, a_to.name, ag_to.city, ag_to.country ORDER BY number_of_flights DESC",
+      "explanation": "Groups flights by destination airport from JFK, includes geographic info",
+      "complexity": "complex_aggregation"
+    },
+    {
+      "id": 12,
+      "prompt": "Show flight manifest for flight 115",
+      "sql": "SELECT b.seat, p.firstname, p.lastname, p.passportno, pd.country, b.price FROM booking b INNER JOIN passenger p ON b.passenger_id = p.passenger_id LEFT JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id WHERE b.flight_id = 115 ORDER BY b.seat ASC",
+      "explanation": "Lists all passengers on a specific flight with seat assignments",
+      "complexity": "multiple_joins"
+    },
+    {
+      "id": 13,
+      "prompt": "What is the average ticket price?",
+      "sql": "SELECT AVG(price) as average_price FROM booking",
+      "explanation": "Simple aggregation using AVG function",
+      "complexity": "aggregation"
+    },
+    {
+      "id": 14,
+      "prompt": "Find employees in the marketing department",
+      "sql": "SELECT employee_id, firstname, lastname, emailaddress, salary FROM employee WHERE department = 'marketing' LIMIT 20",
+      "explanation": "Simple filter on department field",
+      "complexity": "simple"
+    },
+    {
+      "id": 15,
+      "prompt": "Get airplane details with type information",
+      "sql": "SELECT ap.airplane_id, ap.capacity, apt.identifier as airplane_type, apt.description, al.airlinename FROM airplane ap INNER JOIN airplane_type apt ON ap.type_id = apt.type_id INNER JOIN airline al ON ap.airline_id = al.airline_id WHERE ap.airplane_id = 100",
+      "explanation": "Joins airplane with type and airline for complete information",
+      "complexity": "multiple_joins"
+    },
+    {
+      "id": 16,
+      "prompt": "Show total revenue by airline",
+      "sql": "SELECT al.airline_id, al.airlinename, al.iata, COUNT(DISTINCT f.flight_id) as total_flights, COUNT(b.booking_id) as total_bookings, SUM(b.price) as total_revenue, AVG(b.price) as avg_ticket_price FROM airline al INNER JOIN flight f ON al.airline_id = f.airline_id LEFT JOIN booking b ON f.flight_id = b.flight_id GROUP BY al.airline_id, al.airlinename, al.iata ORDER BY total_revenue DESC LIMIT 10",
+      "explanation": "Complex aggregation grouping by airline with multiple metrics",
+      "complexity": "complex_aggregation"
+    },
+    {
+      "id": 17,
+      "prompt": "Find passengers who have flown more than 5 times",
+      "sql": "SELECT p.passenger_id, p.firstname, p.lastname, COUNT(b.booking_id) as flight_count FROM passenger p INNER JOIN booking b ON p.passenger_id = b.passenger_id GROUP BY p.passenger_id, p.firstname, p.lastname HAVING flight_count > 5 ORDER BY flight_count DESC",
+      "explanation": "Uses HAVING clause to filter aggregated results",
+      "complexity": "aggregation_with_having"
+    },
+    {
+      "id": 18,
+      "prompt": "Get complete flight details including aircraft type and availability",
+      "sql": "SELECT f.flight_id, f.flightno, f.departure, f.arrival, a_from.name as departure_airport, a_to.name as arrival_airport, al.airlinename, apt.identifier as airplane_type, ap.capacity, COUNT(b.booking_id) as seats_booked, (ap.capacity - COUNT(b.booking_id)) as seats_available FROM flight f INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id INNER JOIN airline al ON f.airline_id = al.airline_id INNER JOIN airplane ap ON f.airplane_id = ap.airplane_id INNER JOIN airplane_type apt ON ap.type_id = apt.type_id LEFT JOIN booking b ON f.flight_id = b.flight_id WHERE f.flight_id = 115 GROUP BY f.flight_id, f.flightno, f.departure, f.arrival, a_from.name, a_to.name, al.airlinename, apt.identifier, ap.capacity",
+      "explanation": "Comprehensive flight information with calculated availability",
+      "complexity": "complex_join_with_calculation"
+    },
+    {
+      "id": 19,
+      "prompt": "Find airports with International in their name",
+      "sql": "SELECT airport_id, iata, icao, name FROM airport WHERE name LIKE '%International%' LIMIT 10",
+      "explanation": "Pattern matching using LIKE operator",
+      "complexity": "simple"
+    },
+    {
+      "id": 20,
+      "prompt": "Show passenger travel statistics including first and last flight dates",
+      "sql": "SELECT p.passenger_id, p.firstname, p.lastname, pd.country, COUNT(b.booking_id) as total_flights, SUM(b.price) as total_spent, AVG(b.price) as avg_price, MIN(f.departure) as first_flight, MAX(f.departure) as last_flight FROM passenger p INNER JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id INNER JOIN booking b ON p.passenger_id = b.passenger_id INNER JOIN flight f ON b.flight_id = f.flight_id GROUP BY p.passenger_id, p.firstname, p.lastname, pd.country HAVING total_flights >= 5 ORDER BY total_flights DESC LIMIT 20",
+      "explanation": "Complex statistics with multiple aggregation functions and HAVING filter",
+      "complexity": "complex_aggregation"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+[project]
+name = "valkey-data-structures-workshop"
+version = "0.1.0"
+description = "Five backend architecture patterns built with native Valkey data structures"
+requires-python = ">=3.11"
+dependencies = [
+    "python-dotenv>=1.2,<2",
+    "rich>=15,<16",
+    "textual>=8,<9",
+    "valkey-glide-sync>=2.6,<3",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=8,<10",
+]
+
+[tool.uv]
+package = false

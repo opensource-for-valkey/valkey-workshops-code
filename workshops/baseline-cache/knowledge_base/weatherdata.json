@@ -1,0 +1,78 @@
+{
+  "table_name": "weatherdata",
+  "description": "Historical weather data recorded at airport weather stations",
+  "primary_key": ["log_date", "time", "station"],
+  "columns": [
+    {
+      "name": "log_date",
+      "type": "date",
+      "nullable": false,
+      "description": "Date of the weather observation"
+    },
+    {
+      "name": "time",
+      "type": "time",
+      "nullable": false,
+      "description": "Time of the weather observation"
+    },
+    {
+      "name": "station",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "Weather station identifier"
+    },
+    {
+      "name": "temp",
+      "type": "decimal(3,1)",
+      "nullable": false,
+      "description": "Temperature in degrees"
+    },
+    {
+      "name": "humidity",
+      "type": "decimal(4,1)",
+      "nullable": false,
+      "description": "Humidity percentage"
+    },
+    {
+      "name": "airpressure",
+      "type": "decimal(10,2)",
+      "nullable": false,
+      "description": "Air pressure measurement"
+    },
+    {
+      "name": "wind",
+      "type": "decimal(5,2)",
+      "nullable": false,
+      "description": "Wind speed"
+    },
+    {
+      "name": "weather",
+      "type": "enum",
+      "nullable": true,
+      "description": "Weather condition description",
+      "valid_values": [
+        "fog-snowfall",
+        "snowfall",
+        "rain",
+        "rain-snowfall",
+        "fog-rain",
+        "fog-rain-thunderstorm",
+        "thunderstorm",
+        "fog",
+        "rain-thunderstorm"
+      ]
+    },
+    {
+      "name": "winddirection",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Wind direction in degrees (0-360)"
+    }
+  ],
+  "foreign_keys": [],
+  "indexes": [],
+  "referenced_by": [],
+  "engine": "MyISAM",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

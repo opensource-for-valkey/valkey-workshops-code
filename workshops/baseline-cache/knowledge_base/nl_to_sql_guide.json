@@ -1,0 +1,147 @@
+{
+  "title": "Natural Language to SQL Conversion Guide",
+  "description": "Guidelines for converting natural language queries to SQL for the Flughafen database",
+  "common_keywords_mapping": {
+    "retrieval_keywords": {
+      "keywords": ["get", "show", "find", "fetch", "retrieve", "display", "list"],
+      "sql_operation": "SELECT"
+    },
+    "filtering_keywords": {
+      "keywords": ["with", "by", "where", "having", "for"],
+      "sql_operation": "WHERE clause"
+    },
+    "counting_keywords": {
+      "keywords": ["count", "how many", "number of", "total"],
+      "sql_operation": "COUNT() function"
+    },
+    "aggregation_keywords": {
+      "keywords": ["sum", "total", "average", "avg", "maximum", "max", "minimum", "min"],
+      "sql_operation": "Aggregation functions (SUM, AVG, MAX, MIN)"
+    },
+    "sorting_keywords": {
+      "keywords": ["top", "bottom", "highest", "lowest", "most", "least", "best", "worst"],
+      "sql_operation": "ORDER BY with LIMIT"
+    },
+    "grouping_keywords": {
+      "keywords": ["per", "by", "each", "every", "group by"],
+      "sql_operation": "GROUP BY clause"
+    }
+  },
+  "entity_recognition": {
+    "airports": {
+      "identifiers": ["airport", "IATA code", "ICAO code"],
+      "table": "airport",
+      "common_fields": ["iata", "icao", "name", "airport_id"],
+      "join_with_geo": "LEFT JOIN airport_geo ON airport.airport_id = airport_geo.airport_id"
+    },
+    "airlines": {
+      "identifiers": ["airline", "carrier"],
+      "table": "airline",
+      "common_fields": ["airline_id", "iata", "airlinename", "base_airport"]
+    },
+    "flights": {
+      "identifiers": ["flight", "flight number"],
+      "table": "flight",
+      "common_fields": ["flight_id", "flightno", "from", "to", "departure", "arrival"]
+    },
+    "passengers": {
+      "identifiers": ["passenger", "traveler", "customer"],
+      "table": "passenger",
+      "common_fields": ["passenger_id", "passportno", "firstname", "lastname"],
+      "details_table": "passengerdetails"
+    },
+    "bookings": {
+      "identifiers": ["booking", "reservation", "ticket"],
+      "table": "booking",
+      "common_fields": ["booking_id", "flight_id", "passenger_id", "seat", "price"]
+    },
+    "employees": {
+      "identifiers": ["employee", "staff", "worker"],
+      "table": "employee",
+      "common_fields": ["employee_id", "firstname", "lastname", "department", "username"]
+    }
+  }
+}
+  ,
+  "common_join_patterns": {
+    "airport_with_geography": {
+      "description": "Get airport with location details",
+      "tables": ["airport", "airport_geo"],
+      "join": "LEFT JOIN airport_geo ag ON a.airport_id = ag.airport_id",
+      "use_case": "When geographic information (city, country, coordinates) is needed"
+    },
+    "passenger_with_details": {
+      "description": "Get passenger with contact information",
+      "tables": ["passenger", "passengerdetails"],
+      "join": "LEFT JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id",
+      "use_case": "When passenger contact info or demographics are needed"
+    },
+    "flight_with_airports": {
+      "description": "Get flight with departure and arrival airport names",
+      "tables": ["flight", "airport (twice)"],
+      "join": "INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id",
+      "use_case": "When flight route information is needed",
+      "note": "Use aliases a_from and a_to for departure and arrival airports"
+    },
+    "flight_with_airline": {
+      "description": "Get flight with airline information",
+      "tables": ["flight", "airline"],
+      "join": "INNER JOIN airline al ON f.airline_id = al.airline_id",
+      "use_case": "When airline name or details are needed"
+    },
+    "booking_complete": {
+      "description": "Get booking with passenger, flight, and airport details",
+      "tables": ["booking", "passenger", "flight", "airport", "airline"],
+      "join": "INNER JOIN passenger p ON b.passenger_id = p.passenger_id INNER JOIN flight f ON b.flight_id = f.flight_id INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id INNER JOIN airline al ON f.airline_id = al.airline_id",
+      "use_case": "When complete booking information is needed"
+    },
+    "airplane_with_type": {
+      "description": "Get airplane with model information",
+      "tables": ["airplane", "airplane_type"],
+      "join": "INNER JOIN airplane_type apt ON ap.type_id = apt.type_id",
+      "use_case": "When airplane model/type details are needed"
+    }
+  },
+  "important_notes": {
+    "reserved_keywords": {
+      "note": "The columns 'from' and 'to' in the flight table are MySQL reserved keywords",
+      "solution": "Always use backticks: `from` and `to`"
+    },
+    "table_aliases": {
+      "note": "Use consistent aliases for readability",
+      "conventions": {
+        "airport": "a (or a_from/a_to for flight routes)",
+        "airport_geo": "ag (or ag_from/ag_to)",
+        "airline": "al",
+        "airplane": "ap",
+        "airplane_type": "apt",
+        "passenger": "p",
+        "passengerdetails": "pd",
+        "flight": "f",
+        "booking": "b",
+        "employee": "e"
+      }
+    },
+    "date_handling": {
+      "note": "Flight dates have been updated forward by 10 years + 4 months",
+      "current_flights": "Use f.departure > NOW() for upcoming flights",
+      "past_flights": "Use f.departure < NOW() for historical flights"
+    },
+    "pagination": {
+      "note": "Always use LIMIT for queries that might return many rows",
+      "default_limit": 10,
+      "max_recommended": 100
+    }
+  },
+  "query_construction_steps": [
+    "1. Identify the main entity (table) from the natural language query",
+    "2. Determine what information is needed (SELECT columns)",
+    "3. Identify if joins are needed based on requested information",
+    "4. Determine filtering conditions (WHERE clause)",
+    "5. Check if aggregation is needed (COUNT, SUM, AVG, etc.)",
+    "6. Determine if grouping is needed (GROUP BY)",
+    "7. Add sorting if specified (ORDER BY)",
+    "8. Add pagination (LIMIT)",
+    "9. Use appropriate table aliases for readability"
+  ]
+}

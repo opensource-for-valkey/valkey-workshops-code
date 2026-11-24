@@ -1,0 +1,99 @@
+{
+  "title": "Flughafen Database Knowledge Base",
+  "description": "Comprehensive knowledge base for natural language to SQL query generation",
+  "purpose": "Enable LLMs to convert natural language queries into accurate SQL statements for the Flughafen airport management database",
+  "database_info": {
+    "name": "flughafendb_large",
+    "license": "CC BY 4.0 by Stefan Pröll, Eva Zangerle, Wolfgang Gassler",
+    "description": "Airport management system with flights, bookings, passengers, airlines, and weather data"
+  },
+  "knowledge_base_structure": {
+    "schema_files": {
+      "description": "Individual table definitions with complete metadata",
+      "files": [
+        "airport.json",
+        "airport_geo.json",
+        "airport_reachable.json",
+        "airline.json",
+        "airplane.json",
+        "airplane_type.json",
+        "flight.json",
+        "flightschedule.json",
+        "flight_log.json",
+        "passenger.json",
+        "passengerdetails.json",
+        "booking.json",
+        "employee.json",
+        "weatherdata.json"
+      ],
+      "content": "Each file contains: columns, data types, constraints, foreign keys, indexes, relationships"
+    },
+    "overview_file": {
+      "file": "database_schema_overview.json",
+      "description": "High-level database structure with table relationships and data quality notes"
+    },
+    "query_pattern_files": {
+      "description": "Common SQL patterns and templates",
+      "files": [
+        {
+          "file": "query_patterns.json",
+          "description": "Reusable query patterns with templates"
+        },
+        {
+          "file": "query_examples_simple.json",
+          "description": "Single table queries and basic operations"
+        },
+        {
+          "file": "query_examples_joins.json",
+          "description": "Queries with JOIN operations"
+        },
+        {
+          "file": "query_examples_complex.json",
+          "description": "Advanced queries with multiple joins"
+        },
+        {
+          "file": "query_examples_aggregations.json",
+          "description": "Queries with GROUP BY and aggregation functions"
+        }
+      ]
+    },
+    "conversion_guides": {
+      "description": "Guidelines for natural language to SQL conversion",
+      "files": [
+        {
+          "file": "nl_to_sql_guide.json",
+          "description": "Keyword mapping, entity recognition, join patterns, and best practices"
+        },
+        {
+          "file": "nl_sql_examples.json",
+          "description": "20+ comprehensive examples mapping natural language to SQL"
+        }
+      ]
+    }
+  },
+  "usage_workflow": {
+    "step_1": "Parse natural language query to identify entities (airports, flights, passengers, etc.)",
+    "step_2": "Identify required tables from entity recognition in nl_to_sql_guide.json",
+    "step_3": "Determine if joins are needed based on requested information",
+    "step_4": "Check nl_sql_examples.json for similar query patterns",
+    "step_5": "Reference table schema files for exact column names and relationships",
+    "step_6": "Apply common_join_patterns from nl_to_sql_guide.json if needed",
+    "step_7": "Construct SQL query following best practices",
+    "step_8": "Add appropriate filtering, aggregation, sorting, and pagination"
+  },
+  "key_features": {
+    "comprehensive_examples": "20+ natural language to SQL examples covering simple to complex queries",
+    "relationship_mapping": "Complete foreign key relationships and join patterns",
+    "best_practices": "Guidelines for table aliases, reserved keywords, pagination",
+    "query_templates": "Reusable patterns for common query types",
+    "entity_recognition": "Keyword mapping for identifying tables and operations"
+  },
+  "important_notes": [
+    "The 'from' and 'to' columns in flight table are reserved keywords - use backticks: `from`, `to`",
+    "Flight dates have been updated forward by 10 years + 4 months",
+    "Use LEFT JOIN for optional relationships (e.g., airport_geo, passengerdetails)",
+    "Use INNER JOIN for required relationships (e.g., flight to airport)",
+    "Always use LIMIT for queries that might return many rows",
+    "Use consistent table aliases: a (airport), f (flight), p (passenger), b (booking), al (airline)"
+  ]
+}

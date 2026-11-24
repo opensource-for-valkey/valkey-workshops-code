@@ -1,0 +1,21 @@
+[project]
+name = "valkey-search-recommendations-workshop"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "ipykernel>=6.29",
+    "jupyterlab>=4.4",
+    "numpy>=2.2.5",
+    "pandas>=2.2",
+    "python-dotenv==1.2.4",
+    "rich==15.0.0",
+    "valkey-glide-sync==2.6.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+test = [
+    "pytest>=8,<10",
+]

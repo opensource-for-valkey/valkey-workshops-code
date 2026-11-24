@@ -1,0 +1,128 @@
+{
+  "table_name": "flight",
+  "description": "Stores individual flight instances with departure/arrival times and route information",
+  "primary_key": "flight_id",
+  "columns": [
+    {
+      "name": "flight_id",
+      "type": "int(11)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each flight instance"
+    },
+    {
+      "name": "flightno",
+      "type": "char(8)",
+      "nullable": false,
+      "description": "Flight number (e.g., AA123, BA456)"
+    },
+    {
+      "name": "from",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Departure airport ID"
+    },
+    {
+      "name": "to",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Arrival airport ID"
+    },
+    {
+      "name": "departure",
+      "type": "datetime",
+      "nullable": false,
+      "description": "Scheduled departure date and time"
+    },
+    {
+      "name": "arrival",
+      "type": "datetime",
+      "nullable": false,
+      "description": "Scheduled arrival date and time"
+    },
+    {
+      "name": "airline_id",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "ID of the airline operating this flight"
+    },
+    {
+      "name": "airplane_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID of the airplane assigned to this flight"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "from",
+      "references_table": "airport",
+      "references_column": "airport_id",
+      "description": "Links to airport table for departure airport"
+    },
+    {
+      "column": "to",
+      "references_table": "airport",
+      "references_column": "airport_id",
+      "description": "Links to airport table for arrival airport"
+    },
+    {
+      "column": "airline_id",
+      "references_table": "airline",
+      "references_column": "airline_id",
+      "description": "Links to airline table to identify the operating airline"
+    },
+    {
+      "column": "airplane_id",
+      "references_table": "airplane",
+      "references_column": "airplane_id",
+      "description": "Links to airplane table to identify the aircraft"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "von_idx",
+      "type": "INDEX",
+      "columns": ["from"]
+    },
+    {
+      "name": "nach_idx",
+      "type": "INDEX",
+      "columns": ["to"]
+    },
+    {
+      "name": "abflug_idx",
+      "type": "INDEX",
+      "columns": ["departure"]
+    },
+    {
+      "name": "ankunft_idx",
+      "type": "INDEX",
+      "columns": ["arrival"]
+    },
+    {
+      "name": "fluglinie_idx",
+      "type": "INDEX",
+      "columns": ["airline_id"]
+    },
+    {
+      "name": "flugzeug_idx",
+      "type": "INDEX",
+      "columns": ["airplane_id"]
+    }
+  ],
+  "referenced_by": [
+    {
+      "table": "booking",
+      "column": "flight_id"
+    },
+    {
+      "table": "flight_log",
+      "column": "flight_id"
+    }
+  ],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci",
+  "notes": "Flight dates have been updated forward by 10 years and 4 months to keep the dataset current"
+}
