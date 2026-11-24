@@ -26,6 +26,29 @@ def test_search_parses_native_document_mapping_and_empty_result(reply, expected)
     assert helpers.search_document_keys(Client(), "movies", b"\x00\x01", 3) == expected
 
 
+@pytest.mark.parametrize(
+    ("reply", "expected"),
+    [
+        ([0], []),
+        ([1, b"movie:1"], [b"movie:1"]),
+        ([2, b"movie:1", b"movie:2"], [b"movie:1", b"movie:2"]),
+        ([1, b"movie:1", [b"title", b"Orbit"]], [b"movie:1"]),
+        (
+            [2, b"movie:1", [b"title", b"Orbit"], b"movie:2", [b"title", b"Tide"]],
+            [b"movie:1", b"movie:2"],
+        ),
+        ([1, {b"movie:1": {b"title": b"Orbit"}}], [b"movie:1"]),
+    ],
+)
+def test_search_reply_keys_accepts_positional_and_mapping_replies(reply, expected):
+    assert helpers.search_reply_keys(reply) == expected
+
+
+def test_search_reply_keys_rejects_unknown_shape():
+    with pytest.raises(TypeError):
+        helpers.search_reply_keys([1, 42])
+
+
 def test_scan_follows_binary_cursor_until_zero():
     class Client:
         def scan(self, cursor, *, match, count):

@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import os
 from dotenv import load_dotenv
-from sqlalchemy import text
+from sqlalchemy import bindparam, text
 from core import get_cache_client, get_db_engine, quote_identifier
 
 # Load environment variables
@@ -184,10 +184,10 @@ def get_random_passengers():
         GROUP BY p.passenger_id, p.passportno, p.firstname, p.lastname
         HAVING COUNT(b.booking_id) > 0
         LIMIT 10
-    """)
+    """).bindparams(bindparam("passenger_ids", expanding=True))
     
     with engine.connect() as conn:
-        result = conn.execute(query, {"passenger_ids": tuple(random_ids)})
+        result = conn.execute(query, {"passenger_ids": list(random_ids)})
         data = [dict(row._mapping) for row in result]
     
     return data

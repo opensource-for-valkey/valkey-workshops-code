@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import time
-from collections.abc import Mapping
 
 import numpy as np
 from glide_sync import Batch, RequestError
 from rich.console import Console
 from rich.table import Table
 
-from valkey_client_manager import ValkeyClientManager, search_document_keys
+from valkey_client_manager import (
+    ValkeyClientManager,
+    search_document_keys,
+    search_reply_keys,
+)
 
 INDEX = "workshop_movies_v1"
 PREFIX = "workshop:movies:v1:"
@@ -81,11 +84,7 @@ def prepare(client) -> None:
 
 
 def document_keys(response) -> list[bytes]:
-    if not response or int(response[0]) == 0:
-        return []
-    if not isinstance(response[1], Mapping):
-        raise TypeError("Expected the Valkey Search document mapping")
-    return list(response[1])
+    return search_reply_keys(response)
 
 
 def display(client, keys: list[bytes], title: str) -> None:

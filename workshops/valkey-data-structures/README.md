@@ -166,7 +166,7 @@ The test group is independent of the repository root environment:
 uv sync --locked --group test
 uv run --locked --group test python -m pytest -q tests
 VALKEY_WORKSHOP_INTEGRATION=1 uv run --locked --group test \
-  python -m pytest -q ../../../tests/test_data_structures_workshop.py
+  python -m pytest -q ../tests/test_data_structures_workshop.py
 ```
 
 The first test command checks connection configuration and client lifecycle

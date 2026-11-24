@@ -15,6 +15,15 @@ docker compose exec -T valkey valkey-cli PING
 uv run python -m semantic_cache
 ```
 
+On a provisioned workshop instance, skip `docker compose up`: the instance
+already runs an authenticated `valkey-bundle` on `127.0.0.1:16379`, and
+`setup_env.py` copies its password from `~/workshop/.valkey.env`. Starting this
+Compose file there would fail because the port is taken.
+
+The Compose file publishes the bundle on `127.0.0.1:${VALKEY_BUNDLE_PORT:-16379}`.
+If port 16379 is already in use locally, set `VALKEY_BUNDLE_PORT` in `.env` and
+point the application at the same port with `SEMANTIC_FAQ_VALKEY_URL`.
+
 The public workshop API defaults to `127.0.0.1:8000`, prints startup details using
 Rich, and closes its `ValkeyClientManager` during application shutdown. Cache
 clearing is disabled by default. JSON payloads and binary FLOAT32 vectors use

@@ -16,6 +16,15 @@ docker compose exec -T valkey valkey-cli PING
 uv run python -m cache_me_if_you_can_genai
 ```
 
+On a provisioned workshop instance, skip `docker compose up`: the instance
+already runs an authenticated `valkey-bundle` on `127.0.0.1:16379`, and
+`setup_env.py` copies its password from `~/workshop/.valkey.env`. Starting this
+Compose file there would fail because the port is taken.
+
+The Compose file publishes the bundle on `127.0.0.1:${VALKEY_BUNDLE_PORT:-16379}`.
+If port 16379 is already in use locally, set `VALKEY_BUNDLE_PORT` in `.env` and
+point the application at the same port with `VALKEY_PORT`.
+
 The public lab API listens on loopback port 5001 by default. The independent raw
 weather proxy is available with `uv run python -m openweathermap_api` on loopback
 port 5000. Cache clearing is disabled by default. Each client is owned by

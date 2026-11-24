@@ -23,9 +23,21 @@ uv sync --locked
 uv run --locked python setup_env.py
 ```
 
-`setup_env.py` creates a private `.env` (mode `0600`). Except in
-`valkey-data-structures`, it reuses the provisioned `~/workshop/.valkey.env`
-password when present. Never commit `.env`.
+`setup_env.py` creates a private `.env` (mode `0600`). Never commit `.env`.
+
+Workshop instances run authenticated Valkey containers on loopback and keep
+their shared password in `~/workshop/.valkey.env` (mode `0600`):
+
+| Container | Port | Used for |
+| --- | --- | --- |
+| `valkey-cache` | 6379 | Exact caching (`VALKEY_*`) |
+| `valkey-server` | 6380 | Additional plain Valkey server |
+| `valkey-bundle` | 16379 | Search and JSON (`VECTOR_*`, GenAI, FAQ) |
+
+Except in `valkey-data-structures`, `setup_env.py` copies that password into
+`.env`. On a workshop instance, use these services and skip the projects'
+`docker compose up` commands. Away from a workshop instance, `setup_env.py`
+generates a random password that the Compose files then require.
 
 Integration tests that need a real Valkey server live in [`tests/`](tests/) and
 run in CI; see `.github/workflows/ci.yml`.

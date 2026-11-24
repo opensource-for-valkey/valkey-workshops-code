@@ -196,7 +196,7 @@ INNER JOIN flight f ON (f.from = a.airport_id OR f.to = a.airport_id)
 WHERE DATE(f.departure) = '{query_date.strftime("%Y-%m-%d")}'
     AND a.iata IS NOT NULL
 GROUP BY a.airport_id, a.iata, a.icao, a.name
-HAVING total_flights > 0
+HAVING COUNT(DISTINCT f.flight_id) > 0
 ORDER BY total_flights DESC, a.name ASC
 LIMIT {limit}
 """
@@ -268,7 +268,7 @@ INNER JOIN booking b ON b.flight_id = f.flight_id
 WHERE DATE(f.departure) = '{query_date.strftime("%Y-%m-%d")}'
     AND a.iata IS NOT NULL
 GROUP BY a.airport_id, a.iata, a.icao, a.name
-HAVING total_passengers > 0
+HAVING COUNT(DISTINCT b.booking_id) > 0
 ORDER BY total_passengers DESC, a.name ASC
 LIMIT {limit}
 """
@@ -346,7 +346,7 @@ INNER JOIN flight f ON (f.from = a.airport_id OR f.to = a.airport_id)
 WHERE DATE(f.departure) = '{query_date.strftime("%Y-%m-%d")}'
     AND a.iata IS NOT NULL
 GROUP BY a.airport_id, a.iata, a.icao, a.name
-HAVING total_flights > 0
+HAVING COUNT(DISTINCT f.flight_id) > 0
 ORDER BY total_flights DESC, a.name ASC
 LIMIT 1000
 

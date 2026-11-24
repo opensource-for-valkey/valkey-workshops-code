@@ -5,7 +5,7 @@ services:
     environment:
       VALKEYCLI_AUTH: "${VALKEY_PASSWORD:?Run the environment setup first}"
     ports:
-      - "127.0.0.1:16379:6379"
+      - "127.0.0.1:${VALKEY_BUNDLE_PORT:-16379}:6379"
     healthcheck:
       test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
       interval: 2s

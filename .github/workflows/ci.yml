@@ -132,7 +132,8 @@ jobs:
       - name: Verify native GLIDE command helpers and client lifecycle
         run: |
           uv run --locked --project workshops/python-common --group test \
-            python -m pytest -q workshops/python-common/tests/test_glide_helpers.py
+            python -m pytest -q workshops/python-common/tests/test_glide_helpers.py \
+            workshops/tests/test_semantic_faq_settings.py
       - name: Configure an isolated authenticated module server
         env:
           WORKSHOP_ENV_FILE: ${{ runner.temp }}/valkey-modules.env

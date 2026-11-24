@@ -140,7 +140,7 @@ class AirportLeaderboard:
             WHERE DATE(f.departure) = :flight_date
                 AND a.iata IS NOT NULL
             GROUP BY a.airport_id, a.iata, a.icao, a.name
-            HAVING total_flights > 0
+            HAVING COUNT(DISTINCT f.flight_id) > 0
             ORDER BY total_flights DESC, a.name ASC
             LIMIT :limit
         """)
@@ -209,7 +209,7 @@ class AirportLeaderboard:
             WHERE DATE(f.departure) = :flight_date
                 AND a.iata IS NOT NULL
             GROUP BY a.airport_id, a.iata, a.icao, a.name
-            HAVING total_passengers > 0
+            HAVING COUNT(DISTINCT b.booking_id) > 0
             ORDER BY total_passengers DESC, a.name ASC
             LIMIT :limit
         """)

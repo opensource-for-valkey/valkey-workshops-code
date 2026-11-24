@@ -142,12 +142,26 @@ def search_document_keys(
             "2",
         ]
     )
+    return search_reply_keys(response)
+
+
+def search_reply_keys(response) -> list[bytes]:
+    """Return document keys from an FT.SEARCH reply.
+
+    GLIDE returns ``[total, {key: fields}]`` from Valkey Bundle 9.2. Other
+    servers and protocols return the positional form ``[total, key, ...]``
+    with NOCONTENT, or ``[total, key, fields, ...]`` with content.
+    """
     if not response or int(response[0]) == 0:
         return []
-    documents = response[1]
-    if not isinstance(documents, Mapping):
-        raise TypeError("Expected Valkey Search document mapping")
-    return list(documents)
+    entries = response[1:]
+    if len(entries) == 1 and isinstance(entries[0], Mapping):
+        return list(entries[0])
+    if len(entries) > 1 and all(isinstance(entry, list) for entry in entries[1::2]):
+        return list(entries[::2])
+    if all(isinstance(entry, (bytes, str)) for entry in entries):
+        return list(entries)
+    raise TypeError("Unexpected Valkey Search reply shape")
 
 
 def decode_text(value: bytes | str | None) -> str | None:

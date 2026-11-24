@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 
 DEMO_DIR = Path(__file__).resolve().parents[1]
-DEFAULT_DATA_DIR = DEMO_DIR.parent / "data"
+DEFAULT_DATA_DIR = DEMO_DIR / "data"
 
 
 def _path_from_environment(name: str, default: Path) -> Path:
