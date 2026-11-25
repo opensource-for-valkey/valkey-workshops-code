@@ -1,0 +1,74 @@
+{
+  "table_name": "airport_geo",
+  "description": "Geographic information for airports including coordinates and location data",
+  "primary_key": null,
+  "columns": [
+    {
+      "name": "airport_id",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "ID of the airport (links to airport table)"
+    },
+    {
+      "name": "name",
+      "type": "varchar(50)",
+      "nullable": false,
+      "description": "Name of the airport"
+    },
+    {
+      "name": "city",
+      "type": "varchar(50)",
+      "nullable": true,
+      "description": "City where the airport is located"
+    },
+    {
+      "name": "country",
+      "type": "varchar(50)",
+      "nullable": true,
+      "description": "Country where the airport is located"
+    },
+    {
+      "name": "latitude",
+      "type": "decimal(11,8)",
+      "nullable": false,
+      "description": "Latitude coordinate of the airport"
+    },
+    {
+      "name": "longitude",
+      "type": "decimal(11,8)",
+      "nullable": false,
+      "description": "Longitude coordinate of the airport"
+    },
+    {
+      "name": "geolocation",
+      "type": "point",
+      "nullable": false,
+      "description": "Spatial point data for geographic queries"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "airport_id",
+      "references_table": "airport",
+      "references_column": "airport_id",
+      "description": "Links to airport table for airport identification"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "flughafen_idx",
+      "type": "INDEX",
+      "columns": ["airport_id"]
+    },
+    {
+      "name": "geolokation_spt",
+      "type": "SPATIAL",
+      "columns": ["geolocation"],
+      "description": "Spatial index for geographic proximity queries"
+    }
+  ],
+  "referenced_by": [],
+  "engine": "MyISAM",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

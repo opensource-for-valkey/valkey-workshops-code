@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Flight Session Demo{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px;">Welcome, {{ session.passenger.firstname }} {{ session.passenger.lastname }}!</h2>
+
+<div class="card">
+    <h3>👤 Passenger Information</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="info-label">Passport Number</span>
+            <span class="info-value">{{ session.passenger.passportno }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Name</span>
+            <span class="info-value">{{ session.passenger.firstname }} {{ session.passenger.lastname }}</span>
+        </div>
+        {% if session.passenger.city %}
+        <div class="info-item">
+            <span class="info-label">Location</span>
+            <span class="info-value">{{ session.passenger.city }}, {{ session.passenger.country }}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if session.weather %}
+<div class="card">
+    <h3>🌤️ Weather Information</h3>
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="info-label">Location</span>
+            <span class="info-value">{{ session.weather.city }}, {{ session.weather.country }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Temperature</span>
+            <span class="info-value">{{ session.weather.temp }}°F</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Conditions</span>
+            <span class="info-value">{{ session.weather.description|title }}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Humidity</span>
+            <span class="info-value">{{ session.weather.humidity }}%</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Wind Speed</span>
+            <span class="info-value">{{ session.weather.wind_speed }} mph</span>
+        </div>
+    </div>
+    <a href="{{ url_prefix }}{{ url_for('weather') }}" class="btn" style="margin-top: 15px;">Update Weather</a>
+</div>
+{% else %}
+<div class="card">
+    <h3>🌤️ Weather Information</h3>
+    <p style="color: #666; margin-bottom: 15px;">No weather information added yet.</p>
+    <a href="{{ url_prefix }}{{ url_for('weather') }}" class="btn">Add Weather Info</a>
+</div>
+{% endif %}
+
+<div class="card">
+    <h3>✈️ My Flights</h3>
+    {% if session.flights %}
+    <table>
+        <thead>
+            <tr>
+                <th>Flight No</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Departure</th>
+                <th>Arrival</th>
+                <th>Airline</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for flight in session.flights %}
+            <tr>
+                <td><strong>{{ flight.flightno }}</strong></td>
+                <td>{{ flight.from_airport }} ({{ flight.from_iata }})</td>
+                <td>{{ flight.to_airport }} ({{ flight.to_iata }})</td>
+                <td>{{ flight.departure }}</td>
+                <td>{{ flight.arrival }}</td>
+                <td>{{ flight.airline }}</td>
+                <td>
+                    <a href="{{ url_prefix }}{{ url_for('remove_flight', flight_id=flight.flight_id) }}" 
+                       class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Remove</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #666; margin-bottom: 15px;">No flights added yet.</p>
+    {% endif %}
+    <a href="{{ url_prefix }}{{ url_for('flights') }}" class="btn">Find Flights</a>
+</div>
+
+<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+    <p style="font-size: 12px; color: #666;">
+        <strong>Session Storage:</strong> All your data (weather and flights) is stored in Valkey (Redis-compatible) 
+        and will persist across page refreshes until you logout.
+    </p>
+</div>
+{% endblock %}

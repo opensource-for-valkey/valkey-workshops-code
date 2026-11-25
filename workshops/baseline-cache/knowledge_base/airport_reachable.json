@@ -1,0 +1,26 @@
+{
+  "table_name": "airport_reachable",
+  "description": "Temporary table storing reachability information for airports (number of hops/connections needed)",
+  "primary_key": "airport_id",
+  "columns": [
+    {
+      "name": "airport_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID of the airport"
+    },
+    {
+      "name": "hops",
+      "type": "int(11)",
+      "nullable": true,
+      "description": "Number of flight connections (hops) needed to reach this airport"
+    }
+  ],
+  "foreign_keys": [],
+  "indexes": [],
+  "referenced_by": [],
+  "engine": "MEMORY",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci",
+  "notes": "This is an in-memory table used for temporary calculations of airport connectivity"
+}

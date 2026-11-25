@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Flight Session Demo{% endblock %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 50px auto;">
+    <h2 style="text-align: center; margin-bottom: 30px; color: #667eea;">Passenger Login</h2>
+    
+    <div class="card">
+        <p style="margin-bottom: 20px; color: #666;">
+            Enter your passport number to login. Your passport number serves as both username and password.
+        </p>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label for="passport">Passport Number</label>
+                <input type="text" id="passport" name="passport" required 
+                       placeholder="e.g., ABC123456" maxlength="9">
+            </div>
+            
+            <button type="submit" class="btn" style="width: 100%;">Login</button>
+        </form>
+        
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+            <p style="font-size: 12px; color: #666;">
+                <strong>Demo Note:</strong> Use any valid passport number from the database. 
+                Example: Try searching for passengers in the database first.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

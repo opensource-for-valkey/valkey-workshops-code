@@ -1,0 +1,76 @@
+{
+  "table_name": "passengerdetails",
+  "description": "Extended passenger information including contact details and demographics",
+  "primary_key": "passenger_id",
+  "columns": [
+    {
+      "name": "passenger_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID of the passenger (links to passenger table)"
+    },
+    {
+      "name": "birthdate",
+      "type": "date",
+      "nullable": false,
+      "description": "Passenger's date of birth"
+    },
+    {
+      "name": "sex",
+      "type": "char(1)",
+      "nullable": true,
+      "description": "Passenger's gender (m for male, f for female)",
+      "valid_values": ["m", "f"]
+    },
+    {
+      "name": "street",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Street address"
+    },
+    {
+      "name": "city",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "City of residence"
+    },
+    {
+      "name": "zip",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Postal/ZIP code"
+    },
+    {
+      "name": "country",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Country of residence"
+    },
+    {
+      "name": "emailaddress",
+      "type": "varchar(120)",
+      "nullable": true,
+      "description": "Passenger's email address"
+    },
+    {
+      "name": "telephoneno",
+      "type": "varchar(30)",
+      "nullable": true,
+      "description": "Passenger's telephone number"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "passenger_id",
+      "references_table": "passenger",
+      "references_column": "passenger_id",
+      "on_delete": "CASCADE",
+      "description": "Links to passenger table; deletes details when passenger is deleted"
+    }
+  ],
+  "indexes": [],
+  "referenced_by": [],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

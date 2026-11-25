@@ -6,6 +6,7 @@ Hands-on applications, exercises, and supporting assets for learning caching pat
 
 | Path | Description |
 | --- | --- |
+| [`workshops/`](workshops/) | Authoritative code samples for the Workshop Studio guides: one independent `uv` project per module, built on native Valkey GLIDE. |
 | [`cache_me_if_you_can/`](cache_me_if_you_can/) | Primary Python workshop, interactive airport application, guided exercises, supporting services, and optional demos. |
 | [`docs/`](docs/) | Shared FlughafenDB schema and correction SQL used by the workshop. |
 | [`infra/`](infra/) | Optional Ubuntu bootstrap script for workshop prerequisites. Review the script before running it on your system. |

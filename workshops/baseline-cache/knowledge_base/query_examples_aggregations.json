@@ -1,0 +1,24 @@
+{
+  "category": "aggregation_queries",
+  "description": "Queries with GROUP BY, aggregation functions, and statistical analysis",
+  "examples": [
+    {
+      "prompt": "Count bookings per passenger",
+      "sql": "SELECT p.passenger_id, p.firstname, p.lastname, COUNT(b.booking_id) as total_bookings FROM passenger p INNER JOIN booking b ON p.passenger_id = b.passenger_id GROUP BY p.passenger_id, p.firstname, p.lastname ORDER BY total_bookings DESC LIMIT 10",
+      "tables_used": ["passenger", "booking"],
+      "key_concepts": ["GROUP BY", "COUNT aggregation", "ORDER BY aggregate", "top N results"]
+    },
+    {
+      "prompt": "Show revenue by route with top 10 most profitable routes",
+      "sql": "SELECT a_from.name as departure_airport, a_from.iata as from_iata, a_to.name as arrival_airport, a_to.iata as to_iata, COUNT(DISTINCT f.flight_id) as total_flights, COUNT(b.booking_id) as total_bookings, SUM(b.price) as total_revenue, AVG(b.price) as avg_ticket_price FROM flight f INNER JOIN booking b ON f.flight_id = b.flight_id INNER JOIN airport a_from ON f.`from` = a_from.airport_id INNER JOIN airport a_to ON f.`to` = a_to.airport_id GROUP BY a_from.airport_id, a_from.name, a_from.iata, a_to.airport_id, a_to.name, a_to.iata ORDER BY total_revenue DESC LIMIT 10",
+      "tables_used": ["flight", "booking", "airport"],
+      "key_concepts": ["GROUP BY multiple columns", "SUM", "AVG", "COUNT DISTINCT", "revenue analysis"]
+    },
+    {
+      "prompt": "Get passenger travel statistics for frequent flyers",
+      "sql": "SELECT p.passenger_id, p.firstname, p.lastname, pd.country, pd.city, COUNT(b.booking_id) as total_flights, SUM(b.price) as total_spent, AVG(b.price) as avg_ticket_price, MIN(f.departure) as first_flight_date, MAX(f.departure) as last_flight_date FROM passenger p INNER JOIN passengerdetails pd ON p.passenger_id = pd.passenger_id INNER JOIN booking b ON p.passenger_id = b.passenger_id INNER JOIN flight f ON b.flight_id = f.flight_id GROUP BY p.passenger_id, p.firstname, p.lastname, pd.country, pd.city HAVING total_flights >= 5 ORDER BY total_flights DESC LIMIT 20",
+      "tables_used": ["passenger", "passengerdetails", "booking", "flight"],
+      "key_concepts": ["GROUP BY", "HAVING clause", "MIN/MAX dates", "multiple aggregations"]
+    }
+  ]
+}

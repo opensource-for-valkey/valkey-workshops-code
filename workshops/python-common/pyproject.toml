@@ -1,0 +1,20 @@
+[project]
+name = "valkey-python-workshop-runtime"
+version = "0.1.0"
+description = "Native GLIDE lifecycle and module-command helpers for the Valkey Python workshops"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.2.5",
+    "python-dotenv==1.2.4",
+    "rich==15.0.0",
+    "valkey-glide-sync==2.6.0",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=8,<10",
+    "ruff>=0.14,<1",
+]
+
+[tool.uv]
+package = false

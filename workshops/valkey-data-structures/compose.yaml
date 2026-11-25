@@ -1,0 +1,43 @@
+services:
+  valkey-admin:
+    image: valkey/valkey-admin:1.2.0
+    ports:
+      - "127.0.0.1:${VALKEY_ADMIN_PORT:-8082}:8080"
+    environment:
+      DEPLOYMENT_MODE: Web
+      VALKEY_HOST: valkey
+      VALKEY_PORT: "6379"
+      VALKEY_TLS: "false"
+      VALKEY_AUTH_TYPE: password
+      VALKEY_USERNAME: "${VALKEY_USERNAME:-default}"
+      VALKEY_PASSWORD: "${VALKEY_PASSWORD:?Generate the lab .env first}"
+    depends_on:
+      valkey:
+        condition: service_healthy
+  valkey:
+    image: valkey/valkey:9.2-alpine
+    ports:
+      - "127.0.0.1:${VALKEY_PORT:-6381}:6379"
+    environment:
+      VALKEY_PASSWORD: "${VALKEY_PASSWORD:?Generate the lab .env first}"
+      VALKEYCLI_AUTH: "${VALKEY_PASSWORD:?Generate the lab .env first}"
+    command:
+      - sh
+      - -c
+      - >-
+        exec docker-entrypoint.sh valkey-server
+        --requirepass "$$VALKEY_PASSWORD"
+        --appendonly yes
+        --appendfsync everysec
+        --maxmemory 128mb
+        --maxmemory-policy noeviction
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  valkey-data:

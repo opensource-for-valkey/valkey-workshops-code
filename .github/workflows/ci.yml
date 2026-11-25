@@ -57,3 +57,140 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install --yes shellcheck
       - run: shellcheck -S error cache_me_if_you_can/scripts/*.sh
+
+  data-structures-labs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.9"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: workshops/valkey-data-structures/uv.lock
+      - run: uv sync --locked --project workshops/valkey-data-structures --group test
+      - name: Verify connection modes, TLS configuration, and Sentinel recovery
+        run: |
+          uv run --locked --project workshops/valkey-data-structures --group test \
+            python -m pytest -q workshops/valkey-data-structures/tests
+      - name: Configure isolated Valkey test server
+        env:
+          TEST_ENV_FILE: ${{ runner.temp }}/valkey-data-structures.env
+        run: |
+          uv run --locked --project workshops/valkey-data-structures --group test python - <<'PY'
+          import os
+          import secrets
+
+          password = secrets.token_hex(24)
+          print(f"::add-mask::{password}")
+          settings = {
+              "COMPOSE_PROJECT_NAME": "data-structures-ci",
+              "VALKEY_HOST": "127.0.0.1",
+              "VALKEY_PORT": "16380",
+              "VALKEY_PASSWORD": password,
+          }
+          descriptor = os.open(
+              os.environ["TEST_ENV_FILE"], os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600
+          )
+          with os.fdopen(descriptor, "w") as output:
+              for name, value in settings.items():
+                  output.write(f"{name}={value}\n")
+          with open(os.environ["GITHUB_ENV"], "a") as output:
+              for name, value in settings.items():
+                  output.write(f"{name}={value}\n")
+          PY
+      - name: Start Valkey
+        run: |
+          docker compose --env-file "${{ runner.temp }}/valkey-data-structures.env" \
+            -f workshops/valkey-data-structures/compose.yaml up -d --wait
+      - name: Run lab integration tests
+        run: |
+          VALKEY_WORKSHOP_INTEGRATION=1 uv run --locked \
+            --project workshops/valkey-data-structures --group test \
+            python -m pytest -q workshops/tests/test_data_structures_workshop.py
+      - name: Remove test server and data
+        if: always()
+        run: |
+          if [ -f "${{ runner.temp }}/valkey-data-structures.env" ]; then
+            docker compose --env-file "${{ runner.temp }}/valkey-data-structures.env" \
+              -f workshops/valkey-data-structures/compose.yaml down --volumes
+          fi
+
+  glide-module-caches:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.13.9"
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: |
+            workshops/python-common/uv.lock
+            workshops/baseline-cache/uv.lock
+      - run: uv sync --locked --project workshops/python-common --group test
+      - name: Verify native GLIDE command helpers and client lifecycle
+        run: |
+          uv run --locked --project workshops/python-common --group test \
+            python -m pytest -q workshops/python-common/tests/test_glide_helpers.py \
+            workshops/tests/test_semantic_faq_settings.py
+      - name: Configure an isolated authenticated module server
+        env:
+          WORKSHOP_ENV_FILE: ${{ runner.temp }}/valkey-modules.env
+        run: |
+          uv run --locked --project workshops/python-common --group test python - <<'PY'
+          import os
+          import secrets
+
+          password = secrets.token_hex(24)
+          print(f"::add-mask::{password}")
+          settings = {
+              "VALKEY_HOST": "127.0.0.1",
+              "VALKEY_PORT": "16381",
+              "VALKEY_USERNAME": "default",
+              "VALKEY_PASSWORD": password,
+          }
+          descriptor = os.open(
+              os.environ["WORKSHOP_ENV_FILE"],
+              os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600,
+          )
+          with os.fdopen(descriptor, "w") as output:
+              for name, value in settings.items():
+                  output.write(f"{name}={value}\n")
+          PY
+      - name: Start the module bundle
+        run: |
+          docker run -d --name valkey-modules-ci \
+            -p 127.0.0.1:16381:6379 \
+            --env-file "${{ runner.temp }}/valkey-modules.env" \
+            --entrypoint sh valkey/valkey-bundle:9.2-alpine \
+            -c 'exec bundle-docker-entrypoint.sh valkey-server --requirepass "$VALKEY_PASSWORD"'
+          for attempt in $(seq 1 30); do
+            if docker exec valkey-modules-ci sh -c \
+              'VALKEYCLI_AUTH="$VALKEY_PASSWORD" valkey-cli PING' >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+      - name: Verify GLIDE JSON and indexed semantic-cache behavior
+        env:
+          VALKEY_MODULES_INTEGRATION: "1"
+          VALKEY_LEGACY_INTEGRATION: "1"
+          WORKSHOP_ENV_FILE: ${{ runner.temp }}/valkey-modules.env
+        run: |
+          uv run --locked --project workshops/python-common --group test \
+            python -m pytest -q workshops/tests/test_glide_module_caches.py \
+            workshops/python-common/tests/test_module_caches.py
+      - name: Verify migrated cache, queue, lock and Flask session behavior
+        env:
+          WORKSHOP_ENV_FILE: ${{ runner.temp }}/valkey-modules.env
+          VECTOR_HOST: "127.0.0.1"
+          VECTOR_PORT: "16381"
+        run: |
+          uv sync --locked --project workshops/baseline-cache --group test
+          uv run --locked --project workshops/baseline-cache --group test \
+            python -m pytest -q workshops/baseline-cache/tests
+      - name: Remove the module test server
+        if: always()
+        run: docker rm -f valkey-modules-ci || true

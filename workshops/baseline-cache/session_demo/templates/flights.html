@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Flights - Flight Session Demo{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px;">✈️ Today's Flights</h2>
+
+<div class="card">
+    <p style="margin-bottom: 20px; color: #666;">
+        Browse today's available flights and add them to your session.
+    </p>
+    
+    {% if flights %}
+    <table>
+        <thead>
+            <tr>
+                <th>Flight No</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Departure</th>
+                <th>Arrival</th>
+                <th>Airline</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for flight in flights %}
+            <tr>
+                <td><strong>{{ flight.flightno }}</strong></td>
+                <td>{{ flight.from_airport }} ({{ flight.from_iata }})</td>
+                <td>{{ flight.to_airport }} ({{ flight.to_iata }})</td>
+                <td>{{ flight.departure.strftime('%H:%M') }}</td>
+                <td>{{ flight.arrival.strftime('%H:%M') }}</td>
+                <td>{{ flight.airlinename }}</td>
+                <td>
+                    <form method="POST" style="margin: 0;">
+                        <input type="hidden" name="flight_id" value="{{ flight.flight_id }}">
+                        <button type="submit" class="btn" style="padding: 5px 10px; font-size: 12px;">
+                            Add to Session
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #666;">No flights available for today.</p>
+    {% endif %}
+    
+    <a href="{{ url_prefix }}{{ url_for('index') }}" class="btn btn-secondary" style="margin-top: 15px;">Back to Dashboard</a>
+</div>
+{% endblock %}

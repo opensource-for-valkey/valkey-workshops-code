@@ -1,0 +1,45 @@
+[project]
+name = "valkey-baseline-cache-workshop"
+version = "0.1.0"
+description = "Native GLIDE airport caching, concurrency and Flask session demos"
+requires-python = ">=3.13"
+dependencies = [
+    "cryptography>=46,<47",
+    "flask>=3.1,<4",
+    "mysql-connector-python>=9.5,<10",
+    "numpy>=2.2,<3",
+    "pandas>=2.3,<3",
+    "plotly>=6.5,<7",
+    "psycopg[binary]>=3.2,<4",
+    "pymysql>=1.1,<2",
+    "python-dotenv==1.2.4",
+    "requests>=2.32,<3",
+    "rich==15.0.0",
+    "sqlalchemy>=2.0,<3",
+    "sqlparse>=0.5,<1",
+    "streamlit>=1.51,<2",
+    "tqdm>=4.67,<5",
+    "typer>=0.15,<1",
+    "valkey-glide-sync==2.6.0",
+]
+
+[project.optional-dependencies]
+semantic = [
+    "sentence-transformers>=5.1.2,<6",
+]
+
+[dependency-groups]
+test = [
+    "pytest>=8,<10",
+    "ruff>=0.14,<1",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py313"

@@ -1,0 +1,66 @@
+{
+  "table_name": "airline",
+  "description": "Stores information about airlines operating in the airport system",
+  "primary_key": "airline_id",
+  "columns": [
+    {
+      "name": "airline_id",
+      "type": "smallint(6)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each airline"
+    },
+    {
+      "name": "iata",
+      "type": "char(2)",
+      "nullable": false,
+      "unique": true,
+      "description": "IATA code for the airline (2-letter code)"
+    },
+    {
+      "name": "airlinename",
+      "type": "varchar(30)",
+      "nullable": true,
+      "description": "Full name of the airline"
+    },
+    {
+      "name": "base_airport",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "ID of the airline's base/home airport"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "base_airport",
+      "references_table": "airport",
+      "references_column": "airport_id",
+      "description": "Links to the airport table to identify the airline's home base"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "iata_unq",
+      "type": "UNIQUE",
+      "columns": ["iata"]
+    },
+    {
+      "name": "heimat_idx",
+      "type": "INDEX",
+      "columns": ["base_airport"]
+    }
+  ],
+  "referenced_by": [
+    {
+      "table": "flight",
+      "column": "airline_id"
+    },
+    {
+      "table": "flightschedule",
+      "column": "airline_id"
+    }
+  ],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

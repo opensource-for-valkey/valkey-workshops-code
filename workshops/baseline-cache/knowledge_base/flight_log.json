@@ -1,0 +1,128 @@
+{
+  "table_name": "flight_log",
+  "description": "Audit log tracking changes made to flight records, storing both old and new values",
+  "primary_key": null,
+  "columns": [
+    {
+      "name": "log_date",
+      "type": "datetime",
+      "nullable": false,
+      "description": "Timestamp when the change was logged"
+    },
+    {
+      "name": "user",
+      "type": "varchar(100)",
+      "nullable": false,
+      "description": "Username of the person who made the change"
+    },
+    {
+      "name": "flight_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID of the flight that was modified"
+    },
+    {
+      "name": "flightno_old",
+      "type": "char(8)",
+      "nullable": false,
+      "description": "Previous flight number"
+    },
+    {
+      "name": "flightno_new",
+      "type": "char(8)",
+      "nullable": false,
+      "description": "New flight number"
+    },
+    {
+      "name": "from_old",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Previous departure airport ID"
+    },
+    {
+      "name": "to_old",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Previous arrival airport ID"
+    },
+    {
+      "name": "from_new",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "New departure airport ID"
+    },
+    {
+      "name": "to_new",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "New arrival airport ID"
+    },
+    {
+      "name": "departure_old",
+      "type": "datetime",
+      "nullable": false,
+      "description": "Previous departure time"
+    },
+    {
+      "name": "arrival_old",
+      "type": "datetime",
+      "nullable": false,
+      "description": "Previous arrival time"
+    },
+    {
+      "name": "departure_new",
+      "type": "datetime",
+      "nullable": false,
+      "description": "New departure time"
+    },
+    {
+      "name": "arrival_new",
+      "type": "datetime",
+      "nullable": false,
+      "description": "New arrival time"
+    },
+    {
+      "name": "airplane_id_old",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "Previous airplane ID"
+    },
+    {
+      "name": "airplane_id_new",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "New airplane ID"
+    },
+    {
+      "name": "airline_id_old",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "Previous airline ID"
+    },
+    {
+      "name": "airline_id_new",
+      "type": "smallint(6)",
+      "nullable": false,
+      "description": "New airline ID"
+    },
+    {
+      "name": "comment",
+      "type": "varchar(200)",
+      "nullable": true,
+      "description": "Optional comment explaining the reason for the change"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "flight_id",
+      "references_table": "flight",
+      "references_column": "flight_id",
+      "description": "Links to the flight table for the modified flight"
+    }
+  ],
+  "indexes": [],
+  "referenced_by": [],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

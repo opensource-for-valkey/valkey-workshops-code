@@ -1,0 +1,44 @@
+{
+  "table_name": "airplane_type",
+  "description": "Catalog of airplane types/models with their specifications",
+  "primary_key": "type_id",
+  "columns": [
+    {
+      "name": "type_id",
+      "type": "int(11)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each airplane type"
+    },
+    {
+      "name": "identifier",
+      "type": "varchar(50)",
+      "nullable": true,
+      "description": "Model identifier or name (e.g., Boeing 737, Airbus A320)"
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "nullable": true,
+      "description": "Detailed description of the airplane type"
+    }
+  ],
+  "foreign_keys": [],
+  "indexes": [
+    {
+      "name": "bezeichnung_full",
+      "type": "FULLTEXT",
+      "columns": ["identifier", "description"],
+      "description": "Full-text search index for airplane type search"
+    }
+  ],
+  "referenced_by": [
+    {
+      "table": "airplane",
+      "column": "type_id"
+    }
+  ],
+  "engine": "MyISAM",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

@@ -1,0 +1,74 @@
+{
+  "table_name": "booking",
+  "description": "Stores flight bookings made by passengers, including seat assignments and pricing",
+  "primary_key": "booking_id",
+  "columns": [
+    {
+      "name": "booking_id",
+      "type": "int(11)",
+      "nullable": false,
+      "auto_increment": true,
+      "description": "Unique identifier for each booking"
+    },
+    {
+      "name": "flight_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID of the flight being booked"
+    },
+    {
+      "name": "seat",
+      "type": "char(4)",
+      "nullable": true,
+      "description": "Seat assignment (e.g., 12A, 5C)"
+    },
+    {
+      "name": "passenger_id",
+      "type": "int(11)",
+      "nullable": false,
+      "description": "ID of the passenger making the booking"
+    },
+    {
+      "name": "price",
+      "type": "decimal(10,2)",
+      "nullable": false,
+      "description": "Price paid for the booking"
+    }
+  ],
+  "foreign_keys": [
+    {
+      "column": "flight_id",
+      "references_table": "flight",
+      "references_column": "flight_id",
+      "description": "Links to flight table to identify the booked flight"
+    },
+    {
+      "column": "passenger_id",
+      "references_table": "passenger",
+      "references_column": "passenger_id",
+      "description": "Links to passenger table to identify who made the booking"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "sitzplan_unq",
+      "type": "UNIQUE",
+      "columns": ["flight_id", "seat"],
+      "description": "Ensures no duplicate seat assignments on the same flight"
+    },
+    {
+      "name": "flug_idx",
+      "type": "INDEX",
+      "columns": ["flight_id"]
+    },
+    {
+      "name": "passagier_idx",
+      "type": "INDEX",
+      "columns": ["passenger_id"]
+    }
+  ],
+  "referenced_by": [],
+  "engine": "InnoDB",
+  "charset": "utf8mb4",
+  "collation": "utf8mb4_unicode_ci"
+}

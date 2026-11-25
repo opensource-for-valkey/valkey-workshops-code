@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Weather - Flight Session Demo{% endblock %}
+
+{% block content %}
+<h2 style="margin-bottom: 20px;">🌤️ Add Weather Information</h2>
+
+<div class="card">
+    <p style="margin-bottom: 20px; color: #666;">
+        Select a country and zip code to get current weather information. This will be stored in your session.
+    </p>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="country">Country</label>
+            <select id="country" name="country" required onchange="updateZipCodes()">
+                <option value="">Select a country</option>
+                {% set countries = cities|map(attribute='country')|unique|list %}
+                {% for country in countries|sort %}
+                <option value="{{ country }}">{{ country }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="zip_code">Zip Code</label>
+            <select id="zip_code" name="zip_code" required>
+                <option value="">Select a country first</option>
+            </select>
+        </div>
+        
+        <button type="submit" class="btn">Get Weather</button>
+        <a href="{{ url_prefix }}{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+<script>
+    const cities = {{ cities|tojson }};
+    
+    function updateZipCodes() {
+        const country = document.getElementById('country').value;
+        const zipSelect = document.getElementById('zip_code');
+        
+        zipSelect.innerHTML = '<option value="">Select a zip code</option>';
+        
+        if (country) {
+            const countryCities = cities.filter(c => c.country === country);
+            countryCities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.zip;
+                option.textContent = `${city.zip} - ${city.name}`;
+                zipSelect.appendChild(option);
+            });
+        }
+    }
+</script>
+{% endblock %}
