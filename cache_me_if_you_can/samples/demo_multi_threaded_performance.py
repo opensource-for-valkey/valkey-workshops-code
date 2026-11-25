@@ -243,9 +243,10 @@ class PerformanceTest:
             metrics["min_time_ns"] = min(metrics["min_time_ns"], query_time_ns)
             metrics["max_time_ns"] = max(metrics["max_time_ns"], query_time_ns)
             
-            if operation_type == "read":
+            # Every read is recorded as a cache hit or a cache miss, so both count as reads.
+            if operation_type in ("read", "cache_hit", "cache_miss"):
                 metrics["reads"] += 1
-            elif operation_type == "write":
+            if operation_type == "write":
                 metrics["writes"] += 1
             elif operation_type == "cache_hit":
                 metrics["cache_hits"] += 1
